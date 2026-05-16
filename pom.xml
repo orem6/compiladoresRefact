@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.dataquery</groupId>
+    <groupId>com.umg</groupId>
     <artifactId>sql-compiler</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
@@ -17,10 +17,15 @@
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <junit.version>5.10.2</junit.version>
-        <exec.mainClass>com.dataquery.sqlcompiler.Main</exec.mainClass>
+        <exec.mainClass>com.umg.Main</exec.mainClass>
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>org.netbeans.external</groupId>
+            <artifactId>AbsoluteLayout</artifactId>
+            <version>RELEASE290</version>
+        </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
@@ -38,7 +43,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.dataquery.sqlcompiler.Main</mainClass>
+                            <mainClass>com.umg.Main</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -53,7 +58,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.2.0</version>
                 <configuration>
-                    <mainClass>com.dataquery.sqlcompiler.Main</mainClass>
+                    <mainClass>com.umg.Main</mainClass>
                 </configuration>
             </plugin>
         </plugins>

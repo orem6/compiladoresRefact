@@ -41,7 +41,7 @@ choco install maven
 sql-compiler/
 ├── pom.xml                                 # Configuración Maven
 │
-├── src/main/java/com/dataquery/sqlcompiler/
+├── src/main/java/com/umg/
 │   ├── Main.java                           # Punto de entrada
 │   │
 │   ├── model/                              # Capa MODELO
@@ -118,7 +118,7 @@ sql-compiler/
 ├── src/main/resources/
 │   └── examples.sql                        # Ejemplos de consultas
 │
-└── src/test/java/com/dataquery/sqlcompiler/
+└── src/test/java/com/umg/
     ├── lexer/
     │   └── LexerTest.java                  # Tests del analizador léxico
     ├── parser/

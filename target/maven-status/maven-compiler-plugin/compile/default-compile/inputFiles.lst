@@ -1,47 +1,47 @@
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\controller\InputHandler.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\controller\SessionController.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\controller\SQLCompilerController.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\Main.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\model\ast\ASTNode.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\model\ast\Column.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\model\ast\CreateTableStatement.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\model\ast\DeleteStatement.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\model\ast\DropTableStatement.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\model\ast\Expression.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\model\ast\InsertStatement.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\model\ast\JoinClause.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\model\ast\SelectStatement.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\model\ast\Table.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\model\ast\UpdateStatement.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\model\ast\WhereClause.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\model\compiler\CompilationResult.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\model\compiler\CompilationSession.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\model\compiler\SQLCompiler.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\model\error\CompilerError.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\model\error\ErrorCollector.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\model\error\ErrorType.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\model\lexer\Lexer.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\model\lexer\Token.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\model\lexer\TokenType.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\model\parser\Grammar.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\model\parser\Parser.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\model\semantic\ScopeResolver.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\model\semantic\SemanticAnalyzer.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\model\semantic\TypeChecker.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\model\symbol\Symbol.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\model\symbol\SymbolTable.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\model\symbol\SymbolType.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\model\validation\ValidationResult.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\model\validation\ValidationRule.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\util\Constants.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\util\StringUtils.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\view\components\ErrorListPanel.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\view\components\SqlInputArea.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\view\components\StatusBar.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\view\panels\AppMenuBar.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\view\panels\ExamplesPanel.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\view\panels\HelpPanel.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\view\panels\HistoryPanel.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\view\panels\MainPanel.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\view\panels\ResultPanel.java
-C:\Users\Omega7\Downloads\Proyectos\compiladoresRefact\compiladoresRefact\sql-compiler\src\main\java\com\dataquery\sqlcompiler\view\SwingApp.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\controller\InputHandler.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\controller\SessionController.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\controller\SQLCompilerController.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\Main.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\ast\ASTNode.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\ast\Column.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\ast\CreateTableStatement.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\ast\DeleteStatement.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\ast\DropTableStatement.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\ast\Expression.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\ast\InsertStatement.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\ast\JoinClause.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\ast\SelectStatement.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\ast\Table.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\ast\UpdateStatement.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\ast\WhereClause.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\compiler\CompilationResult.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\compiler\CompilationSession.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\compiler\SQLCompiler.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\error\CompilerError.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\error\ErrorCollector.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\error\ErrorType.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\lexer\Lexer.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\lexer\Token.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\lexer\TokenType.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\parser\Grammar.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\parser\Parser.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\semantic\ScopeResolver.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\semantic\SemanticAnalyzer.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\semantic\TypeChecker.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\symbol\Symbol.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\symbol\SymbolTable.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\symbol\SymbolType.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\validation\ValidationResult.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\validation\ValidationRule.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\util\Constants.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\util\StringUtils.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\view\components\ErrorListPanel.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\view\components\SqlInputArea.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\view\components\StatusBar.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\view\panels\AppMenuBar.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\view\panels\ExamplesPanel.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\view\panels\HelpPanel.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\view\panels\HistoryPanel.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\view\panels\MainPanel.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\view\panels\ResultPanel.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\view\SwingApp.java
