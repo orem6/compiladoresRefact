@@ -16,6 +16,15 @@ public class Visa_Compilador extends javax.swing.JFrame {
      */
     public Visa_Compilador() {
         initComponents();
+
+        resultArea = new javax.swing.JTextArea();
+        resultArea.setEditable(false);
+        resultArea.setFont(new java.awt.Font("Monospaced", java.awt.Font.PLAIN, 12));
+        resultArea.setBackground(new java.awt.Color(240, 240, 240));
+        javax.swing.JScrollPane scrollPane = new javax.swing.JScrollPane(resultArea);
+        JPanel.setLayout(new java.awt.BorderLayout());
+        JPanel.add(scrollPane, java.awt.BorderLayout.CENTER);
+
         ViewModel model = new ViewModel(this);
         ViewController controller = new ViewController(model);
         setController(controller);
@@ -208,6 +217,7 @@ public class Visa_Compilador extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane1;
     // End of variables declaration//GEN-END:variables
+    public javax.swing.JTextArea resultArea;
 
     public void setController(ViewController controller) {
         this.BtnAnalizar.addActionListener(controller);
