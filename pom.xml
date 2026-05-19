@@ -17,7 +17,7 @@
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <junit.version>5.10.2</junit.version>
-        <exec.mainClass>com.umg.Main</exec.mainClass>
+        <exec.mainClass>com.umg.view.Visa_Compilador</exec.mainClass>
     </properties>
 
     <dependencies>
@@ -43,7 +43,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.umg.Main</mainClass>
+                            <mainClass>com.umg.view.Visa_Compilador</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -58,7 +58,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.2.0</version>
                 <configuration>
-                    <mainClass>com.umg.Main</mainClass>
+                    <mainClass>com.umg.view.Visa_Compilador</mainClass>
                 </configuration>
             </plugin>
         </plugins>
