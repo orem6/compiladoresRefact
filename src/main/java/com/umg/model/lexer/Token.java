@@ -1,25 +1,41 @@
 package com.umg.model.lexer;
 
-public class Token {
-    private final TokenType type;
-    private final String lexeme;
-    private final int line;
-    private final int column;
+import com.umg.model.dialect.SqlDialect;
 
-    public Token(TokenType type, String lexeme, int line, int column) {
-        this.type = type;
-        this.lexeme = lexeme;
-        this.line = line;
-        this.column = column;
+public class Token {
+    private final TokenType tipo;
+    private final String lexema;
+    private final int linea;
+    private final int columna;
+    private final SqlDialect dialecto;
+
+    public Token(TokenType tipo, String lexema, int linea, int columna) {
+        this(tipo, lexema, linea, columna, null);
     }
 
-    public TokenType getType() { return type; }
-    public String getLexeme() { return lexeme; }
-    public int getLine() { return line; }
-    public int getColumn() { return column; }
+    public Token(TokenType tipo, String lexema, int linea, int columna, SqlDialect dialecto) {
+        this.tipo = tipo;
+        this.lexema = lexema;
+        this.linea = linea;
+        this.columna = columna;
+        this.dialecto = dialecto;
+    }
+
+    public TokenType getTipo() { return tipo; }
+    public String getLexema() { return lexema; }
+    public int getLinea() { return linea; }
+    public int getColumna() { return columna; }
+    public SqlDialect getDialecto() { return dialecto; }
+
+    public TokenType getType() { return tipo; }
+    public String getLexeme() { return lexema; }
+    public int getLine() { return linea; }
+    public int getColumn() { return columna; }
 
     @Override
     public String toString() {
-        return "Token{" + "type=" + type + ", lexeme='" + lexeme + "', line=" + line + ", column=" + column + '}';
+        return String.format("%-23s | %-15s | línea %d | columna %d | %s",
+            tipo, lexema, linea, columna,
+            dialecto != null ? dialecto.name() : "COMMON");
     }
 }

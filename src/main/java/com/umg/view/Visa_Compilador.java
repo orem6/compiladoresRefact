@@ -3,7 +3,8 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
  */
 package com.umg.view;
-
+import com.umg.model.ViewModel;
+import com.umg.controller.ViewController;
 /**
  *
  * @author keyor
@@ -15,6 +16,9 @@ public class Visa_Compilador extends javax.swing.JFrame {
      */
     public Visa_Compilador() {
         initComponents();
+        ViewModel model = new ViewModel(this);
+        ViewController controller = new ViewController(model);
+        setController(controller);
     }
 
     /**
@@ -29,7 +33,7 @@ public class Visa_Compilador extends javax.swing.JFrame {
         jPanel1 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
         TxAConsultas = new javax.swing.JTextArea();
-        BtnAnalisar = new javax.swing.JButton();
+        BtnAnalizar = new javax.swing.JButton();
         BtnLimpiar = new javax.swing.JButton();
         BtnAyuda = new javax.swing.JButton();
         JPanel = new javax.swing.JPanel();
@@ -52,14 +56,14 @@ public class Visa_Compilador extends javax.swing.JFrame {
 
         jPanel1.add(jScrollPane1, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 50, 450, 160));
 
-        BtnAnalisar.setBackground(new java.awt.Color(127, 243, 234));
-        BtnAnalisar.setFont(new java.awt.Font("Arial Black", 1, 14)); // NOI18N
-        BtnAnalisar.setText("Analizar");
-        BtnAnalisar.setBorder(javax.swing.BorderFactory.createBevelBorder(javax.swing.border.BevelBorder.RAISED));
-        BtnAnalisar.setMaximumSize(new java.awt.Dimension(100, 30));
-        BtnAnalisar.setMinimumSize(new java.awt.Dimension(100, 30));
-        BtnAnalisar.setPreferredSize(new java.awt.Dimension(100, 30));
-        jPanel1.add(BtnAnalisar, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 240, -1, -1));
+        BtnAnalizar.setBackground(new java.awt.Color(127, 243, 234));
+        BtnAnalizar.setFont(new java.awt.Font("Arial Black", 1, 14)); // NOI18N
+        BtnAnalizar.setText("Analizar");
+        BtnAnalizar.setBorder(javax.swing.BorderFactory.createBevelBorder(javax.swing.border.BevelBorder.RAISED));
+        BtnAnalizar.setMaximumSize(new java.awt.Dimension(100, 30));
+        BtnAnalizar.setMinimumSize(new java.awt.Dimension(100, 30));
+        BtnAnalizar.setPreferredSize(new java.awt.Dimension(100, 30));
+        jPanel1.add(BtnAnalizar, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 240, -1, -1));
 
         BtnLimpiar.setBackground(new java.awt.Color(139, 255, 165));
         BtnLimpiar.setFont(new java.awt.Font("Arial Black", 1, 14)); // NOI18N
@@ -191,7 +195,7 @@ public class Visa_Compilador extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    public javax.swing.JButton BtnAnalisar;
+    public javax.swing.JButton BtnAnalizar;
     public javax.swing.JButton BtnAyuda;
     public javax.swing.JButton BtnConsola;
     public javax.swing.JButton BtnLimpiar;
@@ -204,4 +208,14 @@ public class Visa_Compilador extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane1;
     // End of variables declaration//GEN-END:variables
+
+    public void setController(ViewController controller) {
+        this.BtnAnalizar.addActionListener(controller);
+        this.BtnAyuda.addActionListener(controller);
+        this.BtnConsola.addActionListener(controller);
+        this.BtnLimpiar.addActionListener(controller);
+        this.BtnRegesar.addActionListener(controller);
+        this.BtnTokens.addActionListener(controller);
+        this.addWindowListener(controller);
+    }
 }

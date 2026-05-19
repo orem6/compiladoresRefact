@@ -17,10 +17,22 @@ C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\m
 C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\compiler\CompilationResult.java
 C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\compiler\CompilationSession.java
 C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\compiler\SQLCompiler.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\dialect\FunctionRegistry.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\dialect\KeywordRegistry.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\dialect\mysql\MySqlFunctions.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\dialect\mysql\MySqlKeywords.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\dialect\postgresql\PostgreSqlFunctions.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\dialect\postgresql\PostgreSqlKeywords.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\dialect\SqlDialect.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\dialect\sqlserver\SqlServerFunctions.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\dialect\sqlserver\SqlServerKeywords.java
 C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\error\CompilerError.java
 C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\error\ErrorCollector.java
 C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\error\ErrorType.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\lexer\AnalizadorSql.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\lexer\ErrorLexico.java
 C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\lexer\Lexer.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\lexer\ResultadoLexer.java
 C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\lexer\Token.java
 C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\lexer\TokenType.java
 C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\parser\Grammar.java
@@ -45,3 +57,4 @@ C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\m
 C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\view\panels\MainPanel.java
 C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\view\panels\ResultPanel.java
 C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\view\SwingApp.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\view\Visa_Compilador.java

@@ -1,6 +1,30 @@
 package com.umg.model.lexer;
 
 public enum TokenType {
+    PALABRA_RESERVADA,
+    IDENTIFICADOR,
+    IDENTIFICADOR_DELIMITADO,
+    FUNCION,
+    TIPO_DATO,
+    OPERADOR,
+    OPERADOR_COMPARACION,
+    OPERADOR_LOGICO,
+    NUMERO_ENTERO,
+    NUMERO_DECIMAL,
+    CADENA,
+    COMENTARIO_LINEA,
+    COMENTARIO_BLOQUE,
+    PARENTESIS_IZQUIERDO,
+    PARENTESIS_DERECHO,
+    COMA,
+    PUNTO,
+    PUNTO_Y_COMA,
+    ASTERISCO,
+    PARAMETRO,
+    PLACEHOLDER,
+    EOF,
+    DESCONOCIDO,
+
     KEYWORD,
     IDENTIFIER,
     INTEGER,
@@ -13,5 +37,5 @@ public enum TokenType {
     RPAREN,
     STAR,
     DOT,
-    EOF
+    EOF_OLD
 }
