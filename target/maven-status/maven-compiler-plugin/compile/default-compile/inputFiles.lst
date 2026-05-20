@@ -15,6 +15,7 @@ C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\ma
 C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\ast\UpdateStatement.java
 C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\semantic\AnalizadorSemanticoSql.java
 C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\semantic\result\ErrorSemantico.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\config\OpenApiConfig.java
 C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\config\WebConfig.java
 C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\error\CompilerError.java
 C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\ast\CreateTableStatement.java
@@ -23,6 +24,7 @@ C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\ma
 C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\parser\Parser.java
 C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\lexer\AnalizadorSql.java
 C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\ast\ASTNode.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\api\compiler\dto\ConnectionConfigDto.java
 C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\api\compiler\dto\CompilerSummaryDto.java
 C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\lexer\Token.java
 C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\lexer\Lexer.java
@@ -38,6 +40,7 @@ C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\ma
 C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\ast\SelectStatement.java
 C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\semantic\extractor\SqlReferenceExtractor.java
 C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\api\compiler\dto\CompilerAnalyzeResponse.java
+C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\api\compiler\dto\SemanticResultDto.java
 C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\semantic\validator\SemanticValidator.java
 C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\model\dialect\SqlDialect.java
 C:\Users\sebas\UMG\Séptimo Ciclo\Compiladores\Proyecto\compiladoresRefact\src\main\java\com\umg\api\compiler\dto\CompilerOptionsRequest.java

@@ -1,13 +1,29 @@
 package com.umg.api.compiler.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Error detectado durante una fase del compilador.")
 public class CompilerErrorDto {
 
+    @Schema(description = "Fase donde ocurrio el error.", example = "SYNTAX")
     private String stage;
+
+    @Schema(description = "Codigo interno del error.", example = "EXPECTED_IDENTIFIER")
     private String code;
+
+    @Schema(description = "Mensaje legible del error.", example = "Se esperaba un identificador despues de SELECT.")
     private String message;
+
+    @Schema(description = "Linea donde ocurrio el error, si esta disponible.", example = "1")
     private Integer line;
+
+    @Schema(description = "Columna donde ocurrio el error, si esta disponible.", example = "8")
     private Integer column;
+
+    @Schema(description = "Lexema relacionado con el error.", example = "FROM")
     private String lexeme;
+
+    @Schema(description = "Severidad del error.", example = "ERROR")
     private String severity;
 
     public CompilerErrorDto() {

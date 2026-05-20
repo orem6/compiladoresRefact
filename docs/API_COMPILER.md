@@ -337,6 +337,16 @@ Prueba de conexion a base de datos sin analizar SQL.
 
 ---
 
+## Documentacion Swagger/OpenAPI
+
+La documentacion interactiva de la API esta disponible a traves de Swagger UI.
+
+- Swagger UI: `http://localhost:8080/api/compiler/docs`
+- OpenAPI JSON: `http://localhost:8080/api/compiler/openapi`
+- OpenAPI YAML: `http://localhost:8080/api/compiler/openapi.yaml`
+
+Ver `docs/SWAGGER_OPENAPI.md` para mas detalles.
+
 ## Codigos de error semantico
 
 | Codigo | Descripcion |

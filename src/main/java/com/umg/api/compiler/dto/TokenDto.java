@@ -1,11 +1,23 @@
 package com.umg.api.compiler.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Token generado por el analizador lexico.")
 public class TokenDto {
 
+    @Schema(description = "Tipo del token.", example = "KEYWORD")
     private String type;
+
+    @Schema(description = "Valor lexico del token.", example = "SELECT")
     private String lexeme;
+
+    @Schema(description = "Linea donde aparece el token.", example = "1")
     private int line;
+
+    @Schema(description = "Columna donde aparece el token.", example = "1")
     private int column;
+
+    @Schema(description = "Dialecto asociado al token.", example = "MYSQL")
     private String dialect;
 
     public TokenDto() {

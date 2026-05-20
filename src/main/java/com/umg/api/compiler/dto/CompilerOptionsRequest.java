@@ -1,11 +1,23 @@
 package com.umg.api.compiler.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Opciones de configuracion del analizador.")
 public class CompilerOptionsRequest {
 
+    @Schema(description = "Incluir comentarios como tokens en la respuesta.", example = "true")
     private Boolean includeCommentsAsTokens;
+
+    @Schema(description = "Detener el analisis si se encuentra un error lexico.", example = "true")
     private Boolean stopOnLexicalError;
+
+    @Schema(description = "Detener el analisis si se encuentra un error sintactico.", example = "true")
     private Boolean stopOnSyntaxError;
+
+    @Schema(description = "Incluir la lista de tokens en la respuesta.", example = "true")
     private Boolean returnTokenList;
+
+    @Schema(description = "Incluir la salida de consola en la respuesta.", example = "true")
     private Boolean returnConsoleOutput;
 
     public CompilerOptionsRequest() {
