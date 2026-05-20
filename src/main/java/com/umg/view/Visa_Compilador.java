@@ -25,9 +25,64 @@ public class Visa_Compilador extends javax.swing.JFrame {
         JPanel.setLayout(new java.awt.BorderLayout());
         JPanel.add(scrollPane, java.awt.BorderLayout.CENTER);
 
+        initConnectionComponents();
+
         ViewModel model = new ViewModel(this);
         ViewController controller = new ViewController(model);
         setController(controller);
+    }
+
+    private void initConnectionComponents() {
+        javax.swing.JLabel lblConexion = new javax.swing.JLabel("CONEXION BD");
+        lblConexion.setFont(new java.awt.Font("Arial Black", 1, 14));
+        lblConexion.setForeground(new java.awt.Color(255, 255, 255));
+        jPanel1.add(lblConexion, new org.netbeans.lib.awtextra.AbsoluteConstraints(490, 10, -1, -1));
+
+        javax.swing.JLabel lblHost = new javax.swing.JLabel("Host:");
+        lblHost.setForeground(new java.awt.Color(255, 255, 255));
+        jPanel1.add(lblHost, new org.netbeans.lib.awtextra.AbsoluteConstraints(490, 50, -1, 20));
+        txtHost = new javax.swing.JTextField("localhost");
+        txtHost.setPreferredSize(new java.awt.Dimension(120, 25));
+        jPanel1.add(txtHost, new org.netbeans.lib.awtextra.AbsoluteConstraints(540, 47, 140, -1));
+
+        javax.swing.JLabel lblPuerto = new javax.swing.JLabel("Puerto:");
+        lblPuerto.setForeground(new java.awt.Color(255, 255, 255));
+        jPanel1.add(lblPuerto, new org.netbeans.lib.awtextra.AbsoluteConstraints(490, 80, -1, 20));
+        txtPuerto = new javax.swing.JTextField("3306");
+        txtPuerto.setPreferredSize(new java.awt.Dimension(60, 25));
+        jPanel1.add(txtPuerto, new org.netbeans.lib.awtextra.AbsoluteConstraints(540, 77, 140, -1));
+
+        javax.swing.JLabel lblBD = new javax.swing.JLabel("BD:");
+        lblBD.setForeground(new java.awt.Color(255, 255, 255));
+        jPanel1.add(lblBD, new org.netbeans.lib.awtextra.AbsoluteConstraints(490, 110, -1, 20));
+        txtBaseDatos = new javax.swing.JTextField();
+        txtBaseDatos.setPreferredSize(new java.awt.Dimension(120, 25));
+        jPanel1.add(txtBaseDatos, new org.netbeans.lib.awtextra.AbsoluteConstraints(540, 107, 140, -1));
+
+        javax.swing.JLabel lblUser = new javax.swing.JLabel("User:");
+        lblUser.setForeground(new java.awt.Color(255, 255, 255));
+        jPanel1.add(lblUser, new org.netbeans.lib.awtextra.AbsoluteConstraints(490, 140, -1, 20));
+        txtUsuario = new javax.swing.JTextField("root");
+        txtUsuario.setPreferredSize(new java.awt.Dimension(120, 25));
+        jPanel1.add(txtUsuario, new org.netbeans.lib.awtextra.AbsoluteConstraints(540, 137, 140, -1));
+
+        javax.swing.JLabel lblPass = new javax.swing.JLabel("Pass:");
+        lblPass.setForeground(new java.awt.Color(255, 255, 255));
+        jPanel1.add(lblPass, new org.netbeans.lib.awtextra.AbsoluteConstraints(490, 170, -1, 20));
+        txtPassword = new javax.swing.JPasswordField();
+        txtPassword.setPreferredSize(new java.awt.Dimension(120, 25));
+        jPanel1.add(txtPassword, new org.netbeans.lib.awtextra.AbsoluteConstraints(540, 167, 140, -1));
+
+        BtnConectar = new javax.swing.JButton();
+        BtnConectar.setText("Conectar");
+        BtnConectar.setBackground(new java.awt.Color(100, 200, 255));
+        BtnConectar.setFont(new java.awt.Font("Arial Black", 1, 12));
+        jPanel1.add(BtnConectar, new org.netbeans.lib.awtextra.AbsoluteConstraints(490, 200, 100, 30));
+
+        lblEstadoConexion = new javax.swing.JLabel("Desconectado");
+        lblEstadoConexion.setForeground(new java.awt.Color(255, 100, 100));
+        lblEstadoConexion.setFont(new java.awt.Font("Arial", 1, 11));
+        jPanel1.add(lblEstadoConexion, new org.netbeans.lib.awtextra.AbsoluteConstraints(600, 205, -1, -1));
     }
 
     /**
@@ -109,7 +164,7 @@ public class Visa_Compilador extends javax.swing.JFrame {
 
         DataBases.setBackground(new java.awt.Color(255, 123, 68));
         DataBases.setFont(new java.awt.Font("Arial Black", 1, 14)); // NOI18N
-        DataBases.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "DataBase", "Offline", "Postgres", "SQL Server", "MaríaDB" }));
+        DataBases.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "DataBase", "Offline", "MySQL", "Postgres", "SQL Server", "MaríaDB" }));
         jPanel1.add(DataBases, new org.netbeans.lib.awtextra.AbsoluteConstraints(150, 10, -1, -1));
 
         BtnConsola.setBackground(new java.awt.Color(67, 73, 80));
@@ -218,6 +273,13 @@ public class Visa_Compilador extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane1;
     // End of variables declaration//GEN-END:variables
     public javax.swing.JTextArea resultArea;
+    public javax.swing.JTextField txtHost;
+    public javax.swing.JTextField txtPuerto;
+    public javax.swing.JTextField txtBaseDatos;
+    public javax.swing.JTextField txtUsuario;
+    public javax.swing.JPasswordField txtPassword;
+    public javax.swing.JButton BtnConectar;
+    public javax.swing.JLabel lblEstadoConexion;
 
     public void setController(ViewController controller) {
         this.BtnAnalizar.addActionListener(controller);
@@ -226,6 +288,7 @@ public class Visa_Compilador extends javax.swing.JFrame {
         this.BtnLimpiar.addActionListener(controller);
         this.BtnRegesar.addActionListener(controller);
         this.BtnTokens.addActionListener(controller);
+        this.BtnConectar.addActionListener(controller);
         this.addWindowListener(controller);
     }
 }
