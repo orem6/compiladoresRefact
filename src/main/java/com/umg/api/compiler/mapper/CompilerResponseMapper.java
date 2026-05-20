@@ -4,13 +4,32 @@ import com.umg.api.compiler.dto.*;
 import com.umg.model.lexer.ErrorLexico;
 import com.umg.model.lexer.Token;
 import com.umg.model.lexer.TokenType;
+import com.umg.model.semantic.config.ConexionBaseDatosConfig;
+import com.umg.model.semantic.result.ErrorSemantico;
+import com.umg.model.semantic.result.ResultadoSemantico;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class CompilerResponseMapper {
+
+    public ConexionBaseDatosConfig toConexionConfig(ConnectionConfigDto dto) {
+        if (dto == null) return null;
+        ConexionBaseDatosConfig config = new ConexionBaseDatosConfig();
+        config.setDialecto(dto.getDialect());
+        config.setHost(dto.getHost());
+        config.setPuerto(dto.getPort() != null ? dto.getPort() : 0);
+        config.setBaseDatos(dto.getDatabase());
+        config.setEsquema(dto.getSchema());
+        config.setUsuario(dto.getUsername());
+        config.setPassword(dto.getPassword());
+        config.setUrlJdbc(dto.getJdbcUrl());
+        config.setUsarUrlJdbcDirecta(dto.getUseDirectJdbcUrl() != null ? dto.getUseDirectJdbcUrl() : false);
+        return config;
+    }
 
     public TokenDto toTokenDto(Token token) {
         String typeName = mapTokenType(token.getType());
@@ -44,6 +63,32 @@ public class CompilerResponseMapper {
             result.add(toCompilerErrorDto(e, stage, severity));
         }
         return result;
+    }
+
+    public CompilerErrorDto toCompilerErrorDtoFromSemantic(ErrorSemantico error) {
+        return new CompilerErrorDto(
+            "SEMANTIC",
+            error.getCodigo(),
+            error.getMensaje(),
+            error.getLinea(),
+            error.getColumna(),
+            error.getEntidad(),
+            "ERROR"
+        );
+    }
+
+    public List<CompilerErrorDto> toCompilerErrorDtoListFromSemantic(List<ErrorSemantico> errors) {
+        return errors.stream().map(this::toCompilerErrorDtoFromSemantic).collect(Collectors.toList());
+    }
+
+    public SemanticResultDto toSemanticResultDto(ResultadoSemantico resultado) {
+        if (resultado == null) return null;
+        SemanticResultDto dto = new SemanticResultDto();
+        dto.setValid(resultado.isValido());
+        dto.setMessage(resultado.getMensaje());
+        dto.setErrors(toCompilerErrorDtoListFromSemantic(resultado.getErroresSemanticos()));
+        dto.setWarnings(resultado.getAdvertencias());
+        return dto;
     }
 
     private String mapTokenType(TokenType type) {
