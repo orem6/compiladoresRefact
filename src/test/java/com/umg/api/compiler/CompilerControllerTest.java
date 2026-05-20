@@ -1,0 +1,183 @@
+package com.umg.api.compiler;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.umg.api.compiler.dto.AnalysisMode;
+import com.umg.api.compiler.dto.CompilerAnalyzeRequest;
+import com.umg.model.dialect.SqlDialect;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.hamcrest.Matchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+class CompilerControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Test
+    void testHealthEndpoint() throws Exception {
+        mockMvc.perform(get("/api/compiler/health"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("UP"))
+                .andExpect(jsonPath("$.service").value("compiler-api"))
+                .andExpect(jsonPath("$.version").value("1.0.0"));
+    }
+
+    @Test
+    void testDialectsEndpoint() throws Exception {
+        mockMvc.perform(get("/api/compiler/dialects"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.supportedDialects", hasItems("MYSQL", "POSTGRESQL", "SQL_SERVER")))
+                .andExpect(jsonPath("$.futureDialects", hasItems("MONGODB")));
+    }
+
+    @Test
+    void testLexicalSyntaxValidSelect() throws Exception {
+        CompilerAnalyzeRequest request = new CompilerAnalyzeRequest();
+        request.setDialect(SqlDialect.MYSQL);
+        request.setSql("SELECT id, nombre FROM clientes WHERE estado = 1;");
+        request.setAnalysisMode(AnalysisMode.LEXICAL_SYNTAX);
+
+        mockMvc.perform(post("/api/compiler/analyze/lexical-syntax")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.valid").value(true))
+                .andExpect(jsonPath("$.executionStatus").value("SUCCESS"))
+                .andExpect(jsonPath("$.lexicalResult").exists())
+                .andExpect(jsonPath("$.syntaxResult").exists())
+                .andExpect(jsonPath("$.semanticResult").doesNotExist())
+                .andExpect(jsonPath("$.connectionResult").doesNotExist());
+    }
+
+    @Test
+    void testLexicalSyntaxEmptySql() throws Exception {
+        CompilerAnalyzeRequest request = new CompilerAnalyzeRequest();
+        request.setDialect(SqlDialect.MYSQL);
+        request.setSql("");
+        request.setAnalysisMode(AnalysisMode.LEXICAL_SYNTAX);
+
+        mockMvc.perform(post("/api/compiler/analyze/lexical-syntax")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void testLexicalSyntaxModeNotAllowed() throws Exception {
+        CompilerAnalyzeRequest request = new CompilerAnalyzeRequest();
+        request.setDialect(SqlDialect.MYSQL);
+        request.setSql("SELECT id FROM clientes;");
+        request.setAnalysisMode(AnalysisMode.FULL);
+
+        mockMvc.perform(post("/api/compiler/analyze/lexical-syntax")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.valid").value(false))
+                .andExpect(jsonPath("$.executionStatus").value("INVALID_REQUEST"))
+                .andExpect(jsonPath("$.message", containsString("fase semantica")));
+    }
+
+    @Test
+    void testLexicalSyntaxWithSyntaxError() throws Exception {
+        CompilerAnalyzeRequest request = new CompilerAnalyzeRequest();
+        request.setDialect(SqlDialect.MYSQL);
+        request.setSql("SELECT FROM WHERE;");
+        request.setAnalysisMode(AnalysisMode.LEXICAL_SYNTAX);
+
+        mockMvc.perform(post("/api/compiler/analyze/lexical-syntax")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.valid").value(false))
+                .andExpect(jsonPath("$.executionStatus").value("SYNTAX_ERROR"))
+                .andExpect(jsonPath("$.syntaxResult.errors", hasSize(greaterThan(0))))
+                .andExpect(jsonPath("$.semanticResult").doesNotExist());
+    }
+
+    @Test
+    void testLexicalOnlyMode() throws Exception {
+        CompilerAnalyzeRequest request = new CompilerAnalyzeRequest();
+        request.setDialect(SqlDialect.MYSQL);
+        request.setSql("SELECT id FROM clientes;");
+        request.setAnalysisMode(AnalysisMode.LEXICAL_ONLY);
+
+        mockMvc.perform(post("/api/compiler/analyze/lexical-syntax")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.lexicalResult").exists())
+                .andExpect(jsonPath("$.syntaxResult").doesNotExist())
+                .andExpect(jsonPath("$.semanticResult").doesNotExist())
+                .andExpect(jsonPath("$.connectionResult").doesNotExist());
+    }
+
+    @Test
+    void testLexicalSyntaxWithComments() throws Exception {
+        CompilerAnalyzeRequest request = new CompilerAnalyzeRequest();
+        request.setDialect(SqlDialect.MYSQL);
+        request.setSql("SELECT id -- solo id\nFROM clientes;");
+        request.setAnalysisMode(AnalysisMode.LEXICAL_SYNTAX);
+
+        mockMvc.perform(post("/api/compiler/analyze/lexical-syntax")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.valid").value(true))
+                .andExpect(jsonPath("$.executionStatus").value("SUCCESS"))
+                .andExpect(jsonPath("$.lexicalResult.tokens", hasSize(greaterThan(0))));
+    }
+
+    @Test
+    void testLexicalSyntaxResponseStructure() throws Exception {
+        CompilerAnalyzeRequest request = new CompilerAnalyzeRequest();
+        request.setRequestId("test-uuid-123");
+        request.setDialect(SqlDialect.POSTGRESQL);
+        request.setSql("SELECT * FROM usuarios;");
+        request.setAnalysisMode(AnalysisMode.LEXICAL_SYNTAX);
+
+        mockMvc.perform(post("/api/compiler/analyze/lexical-syntax")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.requestId").value("test-uuid-123"))
+                .andExpect(jsonPath("$.dialect").value("POSTGRESQL"))
+                .andExpect(jsonPath("$.analysisMode").value("LEXICAL_SYNTAX"))
+                .andExpect(jsonPath("$.summary.tokenCount").isNumber())
+                .andExpect(jsonPath("$.summary.lexicalErrorCount").isNumber())
+                .andExpect(jsonPath("$.summary.syntaxErrorCount").isNumber())
+                .andExpect(jsonPath("$.summary.semanticErrorCount").value(0))
+                .andExpect(jsonPath("$.summary.analyzedAt").exists())
+                .andExpect(jsonPath("$.console", hasSize(greaterThan(0))))
+                .andExpect(jsonPath("$.lexicalResult.tokens[0].type").exists())
+                .andExpect(jsonPath("$.lexicalResult.tokens[0].lexeme").exists())
+                .andExpect(jsonPath("$.lexicalResult.tokens[0].line").isNumber())
+                .andExpect(jsonPath("$.lexicalResult.tokens[0].column").isNumber());
+    }
+
+    @Test
+    void testDialectSqlServer() throws Exception {
+        CompilerAnalyzeRequest request = new CompilerAnalyzeRequest();
+        request.setDialect(SqlDialect.SQL_SERVER);
+        request.setSql("SELECT GETDATE();");
+        request.setAnalysisMode(AnalysisMode.LEXICAL_SYNTAX);
+
+        mockMvc.perform(post("/api/compiler/analyze/lexical-syntax")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.dialect").value("SQL_SERVER"));
+    }
+}
