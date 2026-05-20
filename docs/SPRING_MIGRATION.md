@@ -1,6 +1,6 @@
-# Migración a Spring Boot REST API
+# Migracion a Spring Boot REST API
 
-## Cómo arrancar el proyecto
+## Como arrancar el proyecto
 
 ```bash
 mvn clean spring-boot:run
@@ -13,24 +13,19 @@ mvn clean package
 java -jar target/sql-compiler-1.0.0.jar
 ```
 
-La aplicación arranca en el puerto `8080`.
+La aplicacion arranca en el puerto `8080`.
 
-## Endpoints implementados en esta fase
+## Endpoints implementados
 
-| Método | URL | Descripción |
+| Metodo | URL | Descripcion |
 |--------|-----|-------------|
 | GET | `/api/compiler/health` | Health check del servicio |
 | GET | `/api/compiler/dialects` | Dialectos SQL soportados |
-| POST | `/api/compiler/analyze/lexical-syntax` | Análisis léxico y sintáctico |
+| POST | `/api/compiler/analyze/lexical-syntax` | Analisis lexico y sintactico |
+| POST | `/api/compiler/analyze/full` | Analisis completo (lexico + sintactico + semantico) |
+| POST | `/api/compiler/connection/test` | Prueba de conexion JDBC |
 
-## Endpoints pendientes para fase semántica
-
-| Método | URL | Descripción |
-|--------|-----|-------------|
-| POST | `/api/compiler/connection/test` | Prueba de conexión JDBC |
-| POST | `/api/compiler/analyze/full` | Análisis completo (léxico + sintáctico + semántico) |
-
-## Ejemplo de request
+## Analisis lexico-sintactico (sin BD)
 
 ```bash
 curl -X POST http://localhost:8080/api/compiler/analyze/lexical-syntax \
@@ -38,14 +33,43 @@ curl -X POST http://localhost:8080/api/compiler/analyze/lexical-syntax \
   -d '{
     "dialect": "MYSQL",
     "sql": "SELECT id, nombre FROM clientes WHERE estado = 1;",
-    "analysisMode": "LEXICAL_SYNTAX",
-    "options": {
-      "includeCommentsAsTokens": true,
-      "stopOnLexicalError": true,
-      "stopOnSyntaxError": true,
-      "returnTokenList": true,
-      "returnConsoleOutput": true
+    "analysisMode": "LEXICAL_SYNTAX"
+  }'
+```
+
+## Analisis completo con BD
+
+```bash
+curl -X POST http://localhost:8080/api/compiler/analyze/full \
+  -H "Content-Type: application/json" \
+  -d '{
+    "requestId": "test-001",
+    "dialect": "MYSQL",
+    "sql": "SELECT id, nombre FROM usuarios WHERE activo = 1;",
+    "analysisMode": "FULL",
+    "connectionConfig": {
+      "dialect": "MYSQL",
+      "host": "localhost",
+      "port": 3306,
+      "database": "mi_bd",
+      "username": "root",
+      "password": ""
     }
+  }'
+```
+
+## Prueba de conexion
+
+```bash
+curl -X POST http://localhost:8080/api/compiler/connection/test \
+  -H "Content-Type: application/json" \
+  -d '{
+    "dialect": "MYSQL",
+    "host": "localhost",
+    "port": 3306,
+    "database": "mi_bd",
+    "username": "root",
+    "password": ""
   }'
 ```
 
@@ -57,7 +81,8 @@ mvn clean test
 
 ## Notas importantes
 
-- No se usa datasource fijo. La conexión a BD será dinámica en la fase semántica.
-- Swing fue eliminado como capa de ejecución. La lógica del compilador ahora se expone via REST.
-- Package raíz: `com.umg`.
+- No se usa datasource fijo. La conexion a BD es dinamica y se configura por request.
+- La funcionalidad Swing fue eliminada. Toda la logica se expone via REST.
+- Package raiz: `com.umg`.
 - JDK 17, Maven, Spring Boot 3.2.5.
+- Dialectos soportados: MySQL, PostgreSQL, SQL Server.
