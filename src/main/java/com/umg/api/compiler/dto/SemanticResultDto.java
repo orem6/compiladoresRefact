@@ -1,12 +1,21 @@
 package com.umg.api.compiler.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
+@Schema(description = "Resultado del analisis semantico.")
 public class SemanticResultDto {
 
+    @Schema(description = "Indica si el analisis semantico fue valido.", example = "true")
     private boolean valid;
+
+    @Schema(description = "Mensaje descriptivo del resultado semantico.", example = "Analisis semantico completado sin errores.")
     private String message;
+
+    @Schema(description = "Errores semanticos detectados.")
     private List<CompilerErrorDto> errors;
+
+    @Schema(description = "Advertencias semanticas.")
     private List<String> warnings;
 
     public SemanticResultDto() {
