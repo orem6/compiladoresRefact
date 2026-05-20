@@ -7,6 +7,9 @@ import com.umg.model.error.CompilerError;
 import com.umg.model.error.ErrorCollector;
 import com.umg.model.lexer.*;
 import com.umg.model.parser.Parser;
+import com.umg.model.semantic.AnalizadorSemanticoSql;
+import com.umg.model.semantic.config.ConexionBaseDatosConfig;
+import com.umg.model.semantic.result.ResultadoSemantico;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -46,14 +49,162 @@ public class LexicalSyntaxAnalysisService {
         }
 
         if (mode == AnalysisMode.SEMANTIC_ONLY || mode == AnalysisMode.FULL) {
+            return analyzeSemantic(request, dialect, sql, mode, options);
+        }
+
+        return analyzeLexicalSyntax(request, dialect, sql, mode, options);
+    }
+
+    private CompilerAnalyzeResponse analyzeSemantic(CompilerAnalyzeRequest request, SqlDialect dialect,
+                                                     String sql, AnalysisMode mode, CompilerOptionsRequest options) {
+        ConexionBaseDatosConfig dbConfig = mapper.toConexionConfig(request.getConnectionConfig());
+
+        if (dbConfig == null || !dbConfig.esValida()) {
             CompilerAnalyzeResponse resp = buildErrorResponse(request, ExecutionStatus.INVALID_REQUEST);
-            resp.setMessage("El modo " + mode.name() + " pertenece a la fase semantica y no esta disponible en este endpoint.");
-            console.error("Modo " + mode.name() + " no disponible en esta fase.");
+            resp.setMessage("Se requiere configuracion de base de datos para el modo " + mode.name() + ".");
+            console.error("Configuracion de base de datos no proporcionada o invalida.");
             console.failed("Solicitud invalida.");
             resp.setConsole(console.build());
             return resp;
         }
 
+        console.info("Configuracion de base de datos valida.");
+        console.info("Iniciando analisis semantico...");
+
+        AnalizadorSemanticoSql semantico = new AnalizadorSemanticoSql();
+        ResultadoSemantico resultadoSemantico = semantico.analizar(sql, dbConfig);
+
+        boolean lexicoValido = resultadoSemantico.getResultadoLexer() != null
+            && resultadoSemantico.getResultadoLexer().isValido();
+        boolean semanticoValido = resultadoSemantico.isValido();
+
+        List<ErrorLexico> lexicalErrors = new ArrayList<>();
+        List<ErrorLexico> syntaxErrors = new ArrayList<>();
+        if (resultadoSemantico.getResultadoLexer() != null) {
+            for (ErrorLexico err : resultadoSemantico.getResultadoLexer().getErrores()) {
+                if (err.getCodigo().equals("E001") || err.getCodigo().equals("E000")) {
+                    lexicalErrors.add(err);
+                } else {
+                    syntaxErrors.add(err);
+                }
+            }
+        }
+
+        List<CompilerErrorDto> lexicalErrorDtos = mapper.toCompilerErrorDtoList(lexicalErrors, "LEXICAL", "ERROR");
+        List<CompilerErrorDto> syntaxErrorDtos = mapper.toCompilerErrorDtoList(syntaxErrors, "SYNTAX", "ERROR");
+        SemanticResultDto semanticResult = mapper.toSemanticResultDto(resultadoSemantico);
+
+        LexicalResultDto lexicalResult = null;
+        SyntaxResultDto syntaxResult = null;
+
+        if (mode == AnalysisMode.FULL && resultadoSemantico.getResultadoLexer() != null) {
+            List<Token> tokens = resultadoSemantico.getResultadoLexer().getTokens();
+            List<Token> filteredTokens = new ArrayList<>();
+            for (Token t : tokens) {
+                if (!options.isReturnTokenList()) continue;
+                if (!options.isIncludeCommentsAsTokens() &&
+                    (t.getType() == TokenType.COMENTARIO_LINEA || t.getType() == TokenType.COMENTARIO_BLOQUE)) {
+                    continue;
+                }
+                filteredTokens.add(t);
+            }
+
+            lexicalResult = new LexicalResultDto();
+            lexicalResult.setValid(lexicoValido);
+            lexicalResult.setMessage(lexicoValido ? "Analisis lexico finalizado correctamente." : "Se detectaron errores lexicos.");
+            lexicalResult.setTokens(options.isReturnTokenList() ? mapper.toTokenDtoList(filteredTokens) : new ArrayList<>());
+            lexicalResult.setErrors(lexicalErrorDtos);
+
+            syntaxResult = new SyntaxResultDto();
+            syntaxResult.setValid(!syntaxErrors.isEmpty() ? false : lexicoValido);
+            syntaxResult.setMessage(syntaxErrors.isEmpty() ? "La estructura de la sentencia SQL es correcta." : "La estructura de la sentencia SQL no es valida.");
+            syntaxResult.setStatementType(detectStatementType(filteredTokens));
+            syntaxResult.setDetectedClauses(detectClauses(filteredTokens));
+            syntaxResult.setErrors(syntaxErrorDtos);
+        }
+
+        List<CompilerErrorDto> allErrors = new ArrayList<>();
+        allErrors.addAll(lexicalErrorDtos);
+        allErrors.addAll(syntaxErrorDtos);
+        if (semanticResult != null && semanticResult.getErrors() != null) {
+            allErrors.addAll(semanticResult.getErrors());
+        }
+
+        ExecutionStatus status;
+        String message;
+        boolean valid;
+
+        if (!lexicoValido) {
+            status = ExecutionStatus.LEXICAL_ERROR;
+            message = "La sentencia contiene errores lexicos.";
+            valid = false;
+        } else if (!syntaxErrors.isEmpty()) {
+            status = ExecutionStatus.SYNTAX_ERROR;
+            message = "La sentencia contiene errores sintacticos.";
+            valid = false;
+        } else if (!semanticoValido) {
+            status = ExecutionStatus.SEMANTIC_ERROR;
+            message = resultadoSemantico.getMensaje();
+            valid = false;
+        } else {
+            status = ExecutionStatus.SUCCESS;
+            message = "La sentencia SQL es valida a nivel lexico, sintactico y semantico.";
+            valid = true;
+        }
+
+        console.info("Analisis lexico " + (lexicoValido ? "finalizado sin errores." : "finalizado con errores."));
+        if (!syntaxErrors.isEmpty()) {
+            console.addErrors(syntaxErrorDtos);
+        }
+        if (!semanticoValido) {
+            console.info("Analisis semantico finalizado con errores.");
+            if (semanticResult != null && semanticResult.getErrors() != null) {
+                for (CompilerErrorDto err : semanticResult.getErrors()) {
+                    console.error(err.getMessage() + " en linea " + err.getLine() + ", columna " + err.getColumn());
+                }
+            }
+        } else if (lexicoValido && syntaxErrors.isEmpty()) {
+            console.success("Analisis semantico finalizado sin errores.");
+        }
+
+        if (valid) {
+            console.success("Sentencia valida a nivel lexico, sintactico y semantico.");
+        } else {
+            console.failed("Sentencia invalida.");
+        }
+
+        int warningCount = semanticResult != null && semanticResult.getWarnings() != null
+            ? semanticResult.getWarnings().size() : 0;
+
+        CompilerSummaryDto summary = new CompilerSummaryDto();
+        summary.setTokenCount(lexicalResult != null ? lexicalResult.getTokens().size() : 0);
+        summary.setLexicalErrorCount(lexicalErrorDtos.size());
+        summary.setSyntaxErrorCount(syntaxErrorDtos.size());
+        summary.setSemanticErrorCount(semanticResult != null && semanticResult.getErrors() != null
+            ? semanticResult.getErrors().size() : 0);
+        summary.setWarningCount(warningCount);
+        summary.setAnalyzedAt(LocalDateTime.now());
+
+        CompilerAnalyzeResponse response = new CompilerAnalyzeResponse();
+        response.setRequestId(request.getRequestId());
+        response.setDialect(dialect);
+        response.setAnalysisMode(mode);
+        response.setValid(valid);
+        response.setMessage(message);
+        response.setExecutionStatus(status);
+        response.setSummary(summary);
+        response.setConnectionResult(null);
+        response.setLexicalResult(lexicalResult);
+        response.setSyntaxResult(syntaxResult);
+        response.setSemanticResult(semanticResult);
+        response.setErrors(allErrors.isEmpty() ? null : allErrors);
+        response.setConsole(console.build());
+
+        return response;
+    }
+
+    private CompilerAnalyzeResponse analyzeLexicalSyntax(CompilerAnalyzeRequest request, SqlDialect dialect,
+                                                          String sql, AnalysisMode mode, CompilerOptionsRequest options) {
         List<ErrorLexico> lexicalErrors = new ArrayList<>();
         List<ErrorLexico> syntaxErrors = new ArrayList<>();
 

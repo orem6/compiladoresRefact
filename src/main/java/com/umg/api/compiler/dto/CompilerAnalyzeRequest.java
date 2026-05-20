@@ -18,6 +18,7 @@ public class CompilerAnalyzeRequest {
     private AnalysisMode analysisMode;
 
     private CompilerOptionsRequest options;
+    private ConnectionConfigDto connectionConfig;
 
     public CompilerAnalyzeRequest() {
     }
@@ -60,5 +61,13 @@ public class CompilerAnalyzeRequest {
 
     public void setOptions(CompilerOptionsRequest options) {
         this.options = options;
+    }
+
+    public ConnectionConfigDto getConnectionConfig() {
+        return connectionConfig;
+    }
+
+    public void setConnectionConfig(ConnectionConfigDto connectionConfig) {
+        this.connectionConfig = connectionConfig;
     }
 }
