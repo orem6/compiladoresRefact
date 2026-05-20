@@ -5,6 +5,9 @@ import com.umg.api.compiler.dto.AnalysisMode;
 import com.umg.api.compiler.dto.CompilerAnalyzeRequest;
 import com.umg.model.dialect.SqlDialect;
 import org.junit.jupiter.api.Test;
+
+import java.util.HashMap;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -87,7 +90,7 @@ class CompilerControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.valid").value(false))
                 .andExpect(jsonPath("$.executionStatus").value("INVALID_REQUEST"))
-                .andExpect(jsonPath("$.message", containsString("fase semantica")));
+                .andExpect(jsonPath("$.message", containsString("configuracion de base de datos")));
     }
 
     @Test
@@ -179,5 +182,85 @@ class CompilerControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.dialect").value("SQL_SERVER"));
+    }
+
+    @Test
+    void testFullEndpointWithConfig() throws Exception {
+        Map<String, Object> request = new HashMap<>();
+        request.put("dialect", "MYSQL");
+        request.put("sql", "SELECT id FROM usuarios;");
+        request.put("analysisMode", "FULL");
+
+        Map<String, Object> dbConfig = new HashMap<>();
+        dbConfig.put("dialect", "MYSQL");
+        dbConfig.put("host", "localhost");
+        dbConfig.put("port", 3306);
+        dbConfig.put("database", "testdb");
+        dbConfig.put("username", "root");
+        dbConfig.put("password", "");
+        request.put("connectionConfig", dbConfig);
+
+        mockMvc.perform(post("/api/compiler/analyze/full")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.analysisMode").value("FULL"))
+                .andExpect(jsonPath("$.lexicalResult").exists())
+                .andExpect(jsonPath("$.syntaxResult").exists())
+                .andExpect(jsonPath("$.semanticResult").exists());
+    }
+
+    @Test
+    void testFullEndpointWithLexicalModeOverride() throws Exception {
+        CompilerAnalyzeRequest request = new CompilerAnalyzeRequest();
+        request.setDialect(SqlDialect.MYSQL);
+        request.setSql("SELECT id FROM usuarios;");
+        request.setAnalysisMode(AnalysisMode.LEXICAL_ONLY);
+
+        mockMvc.perform(post("/api/compiler/analyze/full")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.analysisMode").value("FULL"));
+    }
+
+    @Test
+    void testConnectionTestInvalidConfig() throws Exception {
+        Map<String, Object> config = new java.util.HashMap<>();
+        config.put("dialect", "MYSQL");
+
+        mockMvc.perform(post("/api/compiler/connection/test")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(config)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value("INVALID_CONFIG"));
+    }
+
+    @Test
+    void testConnectionTestMissingDialect() throws Exception {
+        Map<String, Object> config = new java.util.HashMap<>();
+        config.put("host", "localhost");
+
+        mockMvc.perform(post("/api/compiler/connection/test")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(config)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value("INVALID_CONFIG"));
+    }
+
+    @Test
+    void testSemanticOnlyModeRequiresConfig() throws Exception {
+        CompilerAnalyzeRequest request = new CompilerAnalyzeRequest();
+        request.setDialect(SqlDialect.MYSQL);
+        request.setSql("SELECT id FROM usuarios;");
+        request.setAnalysisMode(AnalysisMode.SEMANTIC_ONLY);
+
+        mockMvc.perform(post("/api/compiler/analyze/lexical-syntax")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.valid").value(false))
+                .andExpect(jsonPath("$.executionStatus").value("INVALID_REQUEST"))
+                .andExpect(jsonPath("$.message", containsString("configuracion de base de datos")));
     }
 }

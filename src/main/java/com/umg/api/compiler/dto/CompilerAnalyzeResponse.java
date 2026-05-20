@@ -15,7 +15,7 @@ public class CompilerAnalyzeResponse {
     private Object connectionResult;
     private LexicalResultDto lexicalResult;
     private SyntaxResultDto syntaxResult;
-    private Object semanticResult;
+    private SemanticResultDto semanticResult;
     private List<CompilerErrorDto> errors;
     private List<String> console;
 
@@ -102,11 +102,11 @@ public class CompilerAnalyzeResponse {
         this.syntaxResult = syntaxResult;
     }
 
-    public Object getSemanticResult() {
+    public SemanticResultDto getSemanticResult() {
         return semanticResult;
     }
 
-    public void setSemanticResult(Object semanticResult) {
+    public void setSemanticResult(SemanticResultDto semanticResult) {
         this.semanticResult = semanticResult;
     }
 
