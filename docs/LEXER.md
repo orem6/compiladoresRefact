@@ -176,23 +176,21 @@ JSON_QUERY, RANK, DENSE_RANK, ROW_NUMBER, NTILE, LEAD, LAG, etc.
 
 ## 11. Limitaciones actuales
 
-- No se realiza validacion semantica (existencia de tablas, columnas, tipos de datos)
-- No hay conexion JDBC ni validacion contra base de datos real
 - No se soportan todos los tipos de JOIN exoticos (NATURAL JOIN, LATERAL, etc.)
 - No se valida coincidencia de tipos en expresiones
 - No se soportan funciones ventana complejas (OVER con particiones avanzadas)
 - No se soportan procedimientos almacenados completos
 - MongoDB y otros motores NoSQL no estan implementados
 
-## 12. Pendiente para la fase semantica
+## 12. Analisis semantico (implementado)
 
-- Validacion de existencia real de tablas y columnas
-- Validacion de tipos de datos en expresiones
-- Resolucion de alcances (scopes) en subconsultas y CTEs
-- Validacion de claves foraneas y restricciones
-- Optimizacion de consultas
-- Generacion de plan de ejecucion
-- Conexion JDBC a motores de base de datos
+La validacion semantica contra base de datos real esta disponible via:
+
+- **POST /api/compiler/analyze/full** — analisis lexico + sintactico + semantico
+- **POST /api/compiler/connection/test** — prueba de conexion JDBC
+
+Requiere enviar `connectionConfig` con credenciales de base de datos.
+Ver `API_COMPILER.md` para documentacion detallada de los endpoints.
 
 ## 13. Como ejecutar pruebas
 
