@@ -1,14 +1,27 @@
 package com.umg.api.compiler.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 
+@Schema(description = "Resumen de conteos del analisis.")
 public class CompilerSummaryDto {
 
+    @Schema(description = "Cantidad de tokens generados.", example = "10")
     private int tokenCount;
+
+    @Schema(description = "Cantidad de errores lexicos.", example = "0")
     private int lexicalErrorCount;
+
+    @Schema(description = "Cantidad de errores sintacticos.", example = "0")
     private int syntaxErrorCount;
+
+    @Schema(description = "Cantidad de errores semanticos.", example = "0")
     private int semanticErrorCount;
+
+    @Schema(description = "Cantidad de advertencias.", example = "0")
     private int warningCount;
+
+    @Schema(description = "Fecha y hora del analisis.")
     private LocalDateTime analyzedAt;
 
     public CompilerSummaryDto() {

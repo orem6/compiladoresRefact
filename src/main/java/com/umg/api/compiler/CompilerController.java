@@ -5,6 +5,13 @@ import com.umg.application.compiler.LexicalSyntaxAnalysisService;
 import com.umg.model.dialect.SqlDialect;
 import com.umg.model.semantic.config.ConexionBaseDatosConfig;
 import com.umg.model.semantic.metadata.JdbcConnectionFactory;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +24,10 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/compiler")
+@Tag(
+    name = "Compiler API",
+    description = "Endpoints para analisis lexico, sintactico y semantico de sentencias SQL."
+)
 public class CompilerController {
 
     private final LexicalSyntaxAnalysisService analysisService;
@@ -25,6 +36,16 @@ public class CompilerController {
         this.analysisService = analysisService;
     }
 
+    @Operation(
+        summary = "Verificar estado del servicio",
+        description = "Retorna el estado basico de disponibilidad de la API del compilador."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Servicio disponible"
+        )
+    })
     @GetMapping("/health")
     public ResponseEntity<Map<String, Object>> health() {
         return ResponseEntity.ok(Map.of(
@@ -34,6 +55,16 @@ public class CompilerController {
         ));
     }
 
+    @Operation(
+        summary = "Listar dialectos soportados",
+        description = "Retorna los motores SQL soportados por el compilador y los dialectos planeados para futuras versiones."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Listado de dialectos retornado correctamente"
+        )
+    })
     @GetMapping("/dialects")
     public ResponseEntity<Map<String, Object>> dialects() {
         return ResponseEntity.ok(Map.of(
@@ -42,15 +73,131 @@ public class CompilerController {
         ));
     }
 
+    @Operation(
+        summary = "Analizar sentencia SQL a nivel lexico y sintactico",
+        description = """
+                Ejecuta el analizador lexico y sintactico sobre una sentencia SQL.
+
+                No requiere conexion a base de datos.
+                No ejecuta analisis semantico.
+                No valida existencia real de tablas ni columnas.
+                """
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Analisis procesado correctamente. La sentencia puede ser valida o invalida segun el campo valid."
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Request invalido"
+        ),
+        @ApiResponse(
+            responseCode = "500",
+            description = "Error interno no controlado"
+        )
+    })
     @PostMapping("/analyze/lexical-syntax")
     public ResponseEntity<CompilerAnalyzeResponse> analyzeLexicalSyntax(
-            @Valid @RequestBody CompilerAnalyzeRequest request) {
+            @Valid @RequestBody
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                description = "Solicitud para analisis lexico y sintactico",
+                required = true,
+                content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = CompilerAnalyzeRequest.class),
+                    examples = {
+                        @ExampleObject(
+                            name = "Consulta SELECT MySQL",
+                            summary = "Analisis lexico/sintactico de SELECT",
+                            value = """
+                                    {
+                                      "dialect": "MYSQL",
+                                      "sql": "SELECT id, nombre FROM clientes WHERE estado = 1;",
+                                      "analysisMode": "LEXICAL_SYNTAX",
+                                      "options": {
+                                        "includeCommentsAsTokens": true,
+                                        "stopOnLexicalError": true,
+                                        "stopOnSyntaxError": true,
+                                        "returnTokenList": true,
+                                        "returnConsoleOutput": true
+                                      }
+                                    }
+                                    """
+                        )
+                    }
+                )
+            )
+            CompilerAnalyzeRequest request) {
         return ResponseEntity.ok(analysisService.analyze(request));
     }
 
+    @Operation(
+        summary = "Ejecutar analisis completo de sentencia SQL",
+        description = """
+                Ejecuta analisis lexico, sintactico y semantico.
+
+                Requiere datos de conexion a base de datos.
+                Valida tablas, columnas, aliases y funciones segun el motor seleccionado.
+                No ejecuta la sentencia SQL del usuario.
+                Utiliza metadatos JDBC para la validacion semantica.
+                """
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Analisis procesado correctamente. La sentencia puede ser valida o invalida segun el campo valid."
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Request invalido"
+        ),
+        @ApiResponse(
+            responseCode = "500",
+            description = "Error interno no controlado"
+        )
+    })
     @PostMapping("/analyze/full")
     public ResponseEntity<CompilerAnalyzeResponse> analyzeFull(
-            @Valid @RequestBody CompilerAnalyzeRequest request) {
+            @Valid @RequestBody
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                description = "Solicitud para analisis completo",
+                required = true,
+                content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = CompilerAnalyzeRequest.class),
+                    examples = {
+                        @ExampleObject(
+                            name = "Analisis completo MySQL",
+                            summary = "Analisis lexico, sintactico y semantico con conexion a BD",
+                            value = """
+                                    {
+                                      "dialect": "MYSQL",
+                                      "sql": "SELECT c.id, c.nombre FROM clientes c WHERE c.estado = 1;",
+                                      "analysisMode": "FULL",
+                                      "connectionConfig": {
+                                        "dialect": "MYSQL",
+                                        "host": "localhost",
+                                        "port": 3306,
+                                        "database": "mi_base",
+                                        "username": "root",
+                                        "password": "********",
+                                        "schema": "public"
+                                      },
+                                      "options": {
+                                        "includeCommentsAsTokens": true,
+                                        "stopOnLexicalError": true,
+                                        "stopOnSyntaxError": true,
+                                        "returnTokenList": true,
+                                        "returnConsoleOutput": true
+                                      }
+                                    }
+                                    """
+                        )
+                    }
+                )
+            )
+            CompilerAnalyzeRequest request) {
         if (request.getAnalysisMode() == AnalysisMode.LEXICAL_ONLY
             || request.getAnalysisMode() == AnalysisMode.LEXICAL_SYNTAX) {
             request.setAnalysisMode(AnalysisMode.FULL);
@@ -58,9 +205,59 @@ public class CompilerController {
         return ResponseEntity.ok(analysisService.analyze(request));
     }
 
+    @Operation(
+        summary = "Validar conexion a base de datos",
+        description = """
+                Valida si los datos de conexion enviados permiten conectarse al motor seleccionado.
+
+                No ejecuta analisis SQL.
+                No ejecuta sentencias del usuario.
+                No retorna la contrasena en la respuesta.
+                """
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Validacion procesada correctamente. La conexion puede ser valida o invalida segun el campo valid."
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Request invalido"
+        ),
+        @ApiResponse(
+            responseCode = "500",
+            description = "Error interno no controlado"
+        )
+    })
     @PostMapping("/connection/test")
     public ResponseEntity<Map<String, Object>> testConnection(
-            @Valid @RequestBody ConnectionConfigDto connectionConfig) {
+            @Valid @RequestBody
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                description = "Configuracion de conexion a base de datos",
+                required = true,
+                content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = ConnectionConfigDto.class),
+                    examples = {
+                        @ExampleObject(
+                            name = "Conexion MySQL",
+                            summary = "Prueba de conexion a MySQL",
+                            value = """
+                                    {
+                                      "dialect": "MYSQL",
+                                      "host": "localhost",
+                                      "port": 3306,
+                                      "database": "mi_base",
+                                      "username": "root",
+                                      "password": "********",
+                                      "schema": "public"
+                                    }
+                                    """
+                        )
+                    }
+                )
+            )
+            ConnectionConfigDto connectionConfig) {
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("valid", false);

@@ -79,6 +79,17 @@ curl -X POST http://localhost:8080/api/compiler/connection/test \
 mvn clean test
 ```
 
+## Swagger / OpenAPI
+
+Se implemento documentacion interactiva Swagger/OpenAPI como fase adicional.
+
+- Swagger UI: `http://localhost:8080/api/compiler/docs`
+- OpenAPI JSON: `http://localhost:8080/api/compiler/openapi`
+- Dependencia: `springdoc-openapi-starter-webmvc-ui:2.8.17`
+- Clase de configuracion: `com.umg.config.OpenApiConfig`
+
+Ver `docs/SWAGGER_OPENAPI.md` para mas detalles.
+
 ## Notas importantes
 
 - No se usa datasource fijo. La conexion a BD es dinamica y se configura por request.

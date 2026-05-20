@@ -13,6 +13,7 @@ com\umg\model\lexer\Lexer.class
 com\umg\api\compiler\mapper\CompilerResponseMapper$1.class
 com\umg\api\compiler\mapper\CompilerResponseMapper.class
 com\umg\model\dialect\FunctionRegistry.class
+com\umg\api\compiler\dto\SemanticResultDto.class
 com\umg\model\lexer\AnalizadorSql.class
 com\umg\model\dialect\KeywordRegistry.class
 com\umg\config\WebConfig.class
@@ -33,6 +34,7 @@ com\umg\model\semantic\extractor\ReferenciaColumna.class
 com\umg\model\semantic\result\ErrorSemantico.class
 com\umg\exception\UnsupportedDialectException.class
 com\umg\api\compiler\dto\SyntaxResultDto.class
+com\umg\config\OpenApiConfig.class
 com\umg\model\semantic\validator\SemanticValidator.class
 com\umg\CompiladoresRefactApplication.class
 com\umg\model\semantic\AnalizadorSemanticoSql.class
@@ -43,6 +45,7 @@ com\umg\model\parser\Parser.class
 com\umg\api\compiler\dto\AnalysisMode.class
 com\umg\model\ast\ASTNode.class
 com\umg\model\lexer\ErrorLexico.class
+com\umg\api\compiler\dto\ConnectionConfigDto.class
 com\umg\model\lexer\AnalizadorSql$1.class
 com\umg\exception\InvalidCompilerRequestException.class
 com\umg\model\semantic\metadata\DatabaseMetadataService.class
