@@ -1,8 +1,9 @@
-# SQL Compiler - UMG
+# Multi-DB Compiler - UMG
 
-API REST para análisis léxico, sintáctico y semántico de consultas SQL. Construida con Spring Boot 3.2.5 y Java 17.
+API REST para análisis léxico, sintáctico y semántico de consultas **SQL, CQL (Cassandra) y MongoDB (agregación)**. Construida con Spring Boot 3.2.5 y Java 17.
 
 > Migración del validador SQL de C++ a Java/Spring Boot, eliminando dependencias JNI y la interfaz Swing original.
+> Extension a múltiples motores de base de datos (SQL, Cassandra CQL, MongoDB aggregation pipeline).
 
 ---
 
@@ -91,10 +92,10 @@ Salida esperada:
 | Método | Ruta | Descripción |
 |---|---|---|
 | GET | `/api/compiler/health` | Estado del servidor |
-| GET | `/api/compiler/dialects` | Lista de dialectos SQL soportados |
+| GET | `/api/compiler/dialects` | Lista de motores soportados |
 | POST | `/api/compiler/analyze/lexical-syntax` | Análisis léxico + sintáctico (sin BD) |
 | POST | `/api/compiler/analyze/full` | Análisis completo: léxico + sintáctico + semántico (requiere BD) |
-| POST | `/api/compiler/connection/test` | Probar conexión JDBC a una BD |
+| POST | `/api/compiler/connection/test` | Probar conexión a BD (JDBC, CQL o MongoDB) |
 
 ### Modos de análisis (`AnalysisMode`)
 - `LEXICAL_ONLY` — solo tokenización
@@ -104,14 +105,15 @@ Salida esperada:
 
 ---
 
-## Dialectos SQL Soportados
+## Motores Soportados
 
-| Dialecto | Identificadores | Especificidad |
-|---|---|---|
-| `MYSQL` | backticks `` ` `` | Funciones MySQL |
-| `POSTGRESQL` | comillas dobles `"` | Funciones PostgreSQL |
-| `SQL_SERVER` | corchetes `[ ]` | Funciones SQL Server |
-| `COMMON` | estándar ANSI | Sintaxis SQL genérica |
+| Motor | Dialecto | Pipeline | Análisis Semántico |
+|---|---|---|---|
+| MySQL | `MYSQL` | Lexer SQL + Parser SQL | JdbcDatabaseMetadataService |
+| PostgreSQL | `POSTGRESQL` | Lexer SQL + Parser SQL | JdbcDatabaseMetadataService |
+| SQL Server | `SQL_SERVER` | Lexer SQL + Parser SQL | JdbcDatabaseMetadataService |
+| Cassandra | `CASSANDRA` | Lexer SQL + CqlParser | CqlDatabaseMetadataService |
+| MongoDB | `MONGODB` | MongoLexer JSON + MongoParser | MongoDatabaseMetadataService |
 
 ---
 
@@ -120,16 +122,46 @@ Salida esperada:
 El análisis semántico valúa tablas, columnas y tipos contra una BD real.  
 La conexión se configura por request — **no requiere configuración global de BD**.
 
-Ejemplo de body para análisis completo:
+### Ejemplo SQL (MySQL)
 ```json
 {
-  "sql": "SELECT id, name FROM users WHERE age > 18",
   "dialect": "MYSQL",
-  "mode": "FULL",
+  "sql": "SELECT id, name FROM users WHERE age > 18",
+  "analysisMode": "FULL",
   "connectionConfig": {
-    "url": "jdbc:mysql://localhost:3306/mi_bd",
+    "host": "localhost",
+    "port": 3306,
+    "database": "mi_bd",
     "username": "root",
-    "password": "mi_password"
+    "password": "********"
+  }
+}
+```
+
+### Ejemplo CQL (Cassandra)
+```json
+{
+  "dialect": "CASSANDRA",
+  "sql": "SELECT id, nombre FROM usuarios WHERE edad > 18 ALLOW FILTERING;",
+  "analysisMode": "FULL",
+  "connectionConfig": {
+    "host": "localhost",
+    "port": 9042,
+    "database": "mi_keyspace"
+  }
+}
+```
+
+### Ejemplo MongoDB (Aggregation Pipeline)
+```json
+{
+  "dialect": "MONGODB",
+  "sql": "[{\"$match\": {\"status\": \"active\"}}, {\"$group\": {\"_id\": \"$category\", \"total\": {\"$sum\": 1}}}]",
+  "analysisMode": "FULL",
+  "connectionConfig": {
+    "host": "localhost",
+    "port": 27017,
+    "database": "mi_db"
   }
 }
 ```
@@ -186,14 +218,26 @@ src/
 │   ├── exception/                            # Manejo global de errores
 │   └── model/                                # Modelos de dominio
 │       ├── ast/                              # Nodos del AST
-│       ├── dialect/                          # Dialectos SQL
+│       ├── dialect/                          # Dialectos SQL/CQL
 │       ├── error/                            # Modelo de error
-│       ├── lexer/                            # Analizador léxico
-│       ├── parser/                           # Analizador sintáctico
+│       ├── lexer/                            # Analizador léxico SQL
+│       ├── mongo/                            # Analizador MongoDB (lexer + parser)
+│       ├── parser/                           # Analizador sintáctico (SQL + CQL)
 │       └── semantic/                         # Analizador semántico
+│           ├── extractor/                    # Extractor de referencias
+│           ├── metadata/                     # Servicios de metadatos (JDBC, CQL, MongoDB)
+│           ├── result/                       # Modelos de resultado semántico
+│           └── validator/                    # Validadores (SQL, CQL, MongoDB)
 │
 ├── main/resources/
 │   └── application.properties                # Configuración de la app
+│
+├── sql-scripts/
+│   ├── 01-mysql.sql                          # Script de prueba MySQL
+│   ├── 02-postgresql.sql                     # Script de prueba PostgreSQL
+│   ├── 03-sqlserver.sql                      # Script de prueba SQL Server
+│   ├── 04-cassandra.cql                      # Script de prueba Cassandra CQL
+│   └── README.md                             # Documentación de scripts
 │
 └── test/java/com/umg/
     ├── api/compiler/                         # Tests del controlador

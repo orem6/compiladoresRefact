@@ -346,6 +346,39 @@ public class KeywordRegistry {
         "ZONE"
     ));
 
+    private static final Set<String> CASSANDRA_KEYWORDS = new HashSet<>(Arrays.asList(
+        "KEYSPACE", "CLUSTERING", "ALLOW", "FILTERING", "USING",
+        "TTL", "TIMESTAMP", "TOKEN", "WRITETIME",
+        "MATERIALIZED", "VIEW", "COMPACT", "STORAGE",
+        "COUNT", "LIST", "MAP", "SET", "TUPLE",
+        "FROZEN", "DATE", "TIME", "UUID", "TIMEUUID",
+        "INET", "VARINT", "DECIMAL", "FLOAT", "DOUBLE",
+        "TEXT", "ASCII", "BLOB", "BOOLEAN",
+        "STATIC", "PRIMARY", "KEY", "PARTITION",
+        "ORDER", "PER", "PARTITION", "LIMIT",
+        "DISTINCT", "JSON", "DEFAULT", "UNSET",
+        "ROLE", "LOGIN", "PASSWORD", "SUPERUSER",
+        "OPTIONS", "CACHED", "REPLICATION", "CLASS",
+        "REPLICATION_FACTOR", "DURABLE", "WRITES",
+        "NETWORK_TOPOLOGY_STRATEGY", "SIMPLE_STRATEGY",
+        "OLD_NETWORK_TOPOLOGY_STRATEGY", "LOCAL_STRATEGY",
+        "EACH_QUORUM", "QUORUM", "ONE", "TWO", "THREE",
+        "LOCAL_ONE", "LOCAL_QUORUM", "ALL", "ANY",
+        "SERIAL", "LOCAL_SERIAL",
+        "TRUNCATE", "DESCRIBE", "NODES", "SCHEMA",
+        "COPY", "FROM", "CSV", "HEADER", "NORECOVERY",
+        "BATCH", "LOGGED", "UNLOGGED", "APPLY",
+        "TYPE", "INDEX", "CUSTOM", "USING",
+        "IF", "NOT", "EXISTS", "RENAME",
+        "ALTER", "ADD", "DROP", "WITH",
+        "INSERT", "UPDATE", "DELETE", "SELECT",
+        "WHERE", "FROM", "INTO", "VALUES", "SET",
+        "AND", "OR", "IN", "LIKE", "CONTAINS",
+        "CONTAINS_KEY", "ORDER", "BY", "ASC", "DESC",
+        "NULL", "NOT_NULL", "IS", "NOT",
+        "GROUP", "BY"
+    ));
+
     private static final Set<String> SQL_SERVER_KEYWORDS = new HashSet<>(Arrays.asList(
         "ADD", "ALL", "ALTER", "AND", "ANY", "AS", "ASC",
         "AUTHORIZATION", "BACKUP", "BEGIN", "BETWEEN", "BREAK",
@@ -440,6 +473,10 @@ public class KeywordRegistry {
         return SQL_SERVER_KEYWORDS.contains(word.toUpperCase());
     }
 
+    public static boolean isCassandraKeyword(String word) {
+        return CASSANDRA_KEYWORDS.contains(word.toUpperCase());
+    }
+
     public static boolean isKeywordForDialect(String word, SqlDialect dialect) {
         String upper = word.toUpperCase();
         if (COMMON_KEYWORDS.contains(upper)) return true;
@@ -447,6 +484,7 @@ public class KeywordRegistry {
             case MYSQL -> MYSQL_KEYWORDS.contains(upper);
             case POSTGRESQL -> POSTGRESQL_KEYWORDS.contains(upper);
             case SQL_SERVER -> SQL_SERVER_KEYWORDS.contains(upper);
+            case CASSANDRA -> CASSANDRA_KEYWORDS.contains(upper);
             default -> false;
         };
     }
@@ -456,6 +494,7 @@ public class KeywordRegistry {
         return COMMON_KEYWORDS.contains(upper)
             || MYSQL_KEYWORDS.contains(upper)
             || POSTGRESQL_KEYWORDS.contains(upper)
-            || SQL_SERVER_KEYWORDS.contains(upper);
+            || SQL_SERVER_KEYWORDS.contains(upper)
+            || CASSANDRA_KEYWORDS.contains(upper);
     }
 }
