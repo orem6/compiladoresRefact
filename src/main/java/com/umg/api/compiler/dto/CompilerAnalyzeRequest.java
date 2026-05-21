@@ -1,11 +1,11 @@
 package com.umg.api.compiler.dto;
 
-import com.umg.model.dialect.SqlDialect;
+import com.umg.model.dialect.CompilerDialect;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-@Schema(description = "Request principal para analisis SQL.")
+@Schema(description = "Request principal para analisis SQL o NoSQL.")
 public class CompilerAnalyzeRequest {
 
     @Schema(
@@ -16,11 +16,11 @@ public class CompilerAnalyzeRequest {
 
     @NotNull(message = "dialect es obligatorio")
     @Schema(
-        description = "Motor SQL seleccionado.",
-        example = "MYSQL",
-        allowableValues = {"MYSQL", "POSTGRESQL", "SQL_SERVER"}
+        description = "Motor o dialecto seleccionado para el analisis.",
+        example = "MONGODB",
+        allowableValues = {"MYSQL", "POSTGRESQL", "SQL_SERVER", "MONGODB", "CASSANDRA_CQL"}
     )
-    private SqlDialect dialect;
+    private CompilerDialect dialect;
 
     @NotBlank(message = "sql no puede estar vacio")
     @Schema(
@@ -54,11 +54,11 @@ public class CompilerAnalyzeRequest {
         this.requestId = requestId;
     }
 
-    public SqlDialect getDialect() {
+    public CompilerDialect getDialect() {
         return dialect;
     }
 
-    public void setDialect(SqlDialect dialect) {
+    public void setDialect(CompilerDialect dialect) {
         this.dialect = dialect;
     }
 

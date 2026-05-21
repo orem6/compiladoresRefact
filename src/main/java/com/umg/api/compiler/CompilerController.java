@@ -1,7 +1,10 @@
 package com.umg.api.compiler;
 
 import com.umg.api.compiler.dto.*;
+import com.umg.application.compiler.DialectAnalysisRouter;
 import com.umg.application.compiler.LexicalSyntaxAnalysisService;
+import com.umg.model.dialect.CompilerDialect;
+import com.umg.model.dialect.DialectMapper;
 import com.umg.model.dialect.SqlDialect;
 import com.umg.model.semantic.config.ConexionBaseDatosConfig;
 import com.umg.model.semantic.metadata.JdbcConnectionFactory;
@@ -26,13 +29,15 @@ import java.util.Map;
 @RequestMapping("/api/compiler")
 @Tag(
     name = "Compiler API",
-    description = "Endpoints para analisis lexico, sintactico y semantico de sentencias SQL."
+    description = "Endpoints para analisis lexico, sintactico y semantico de sentencias SQL y NoSQL."
 )
 public class CompilerController {
 
+    private final DialectAnalysisRouter router;
     private final LexicalSyntaxAnalysisService analysisService;
 
-    public CompilerController(LexicalSyntaxAnalysisService analysisService) {
+    public CompilerController(DialectAnalysisRouter router, LexicalSyntaxAnalysisService analysisService) {
+        this.router = router;
         this.analysisService = analysisService;
     }
 
@@ -57,7 +62,7 @@ public class CompilerController {
 
     @Operation(
         summary = "Listar dialectos soportados",
-        description = "Retorna los motores SQL soportados por el compilador y los dialectos planeados para futuras versiones."
+        description = "Retorna los motores SQL y NoSQL soportados por el compilador."
     )
     @ApiResponses(value = {
         @ApiResponse(
@@ -68,19 +73,24 @@ public class CompilerController {
     @GetMapping("/dialects")
     public ResponseEntity<Map<String, Object>> dialects() {
         return ResponseEntity.ok(Map.of(
-            "supportedDialects", List.of("MYSQL", "POSTGRESQL", "SQL_SERVER"),
-            "futureDialects", List.of("MONGODB")
+            "supportedDialects", List.of("MYSQL", "POSTGRESQL", "SQL_SERVER", "MONGODB", "CASSANDRA_CQL"),
+            "sqlDialects", List.of("MYSQL", "POSTGRESQL", "SQL_SERVER"),
+            "noSqlDialects", List.of("MONGODB", "CASSANDRA_CQL"),
+            "futureDialects", List.of()
         ));
     }
 
     @Operation(
-        summary = "Analizar sentencia SQL a nivel lexico y sintactico",
+        summary = "Analizar sentencia SQL/NoSQL a nivel lexico y sintactico",
         description = """
-                Ejecuta el analizador lexico y sintactico sobre una sentencia SQL.
+                Ejecuta el analizador lexico y sintactico sobre una sentencia SQL o instruccion NoSQL.
 
                 No requiere conexion a base de datos.
                 No ejecuta analisis semantico.
-                No valida existencia real de tablas ni columnas.
+                No valida existencia real de tablas, columnas, colecciones ni campos.
+
+                El campo 'sql' se conserva por compatibilidad con el frontend, pero para dialectos NoSQL
+                representa la consulta o instruccion NoSQL enviada.
                 """
     )
     @ApiResponses(value = {
@@ -124,23 +134,68 @@ public class CompilerController {
                                       }
                                     }
                                     """
+                        ),
+                        @ExampleObject(
+                            name = "MongoDB find",
+                            summary = "Analisis lexico/sintactico de MongoDB find",
+                            value = """
+                                    {
+                                      "dialect": "MONGODB",
+                                      "sql": "db.clientes.find({ estado: 1 })",
+                                      "analysisMode": "LEXICAL_SYNTAX"
+                                    }
+                                    """
+                        ),
+                        @ExampleObject(
+                            name = "MongoDB aggregate",
+                            summary = "Analisis lexico/sintactico de MongoDB aggregate",
+                            value = """
+                                    {
+                                      "dialect": "MONGODB",
+                                      "sql": "db.pedidos.aggregate([{ $match: { estado: 'ACTIVO' } }, { $group: { _id: '$clienteId', total: { $sum: '$monto' } } }])",
+                                      "analysisMode": "LEXICAL_SYNTAX"
+                                    }
+                                    """
+                        ),
+                        @ExampleObject(
+                            name = "Cassandra SELECT",
+                            summary = "Analisis lexico/sintactico de Cassandra SELECT",
+                            value = """
+                                    {
+                                      "dialect": "CASSANDRA_CQL",
+                                      "sql": "SELECT id, nombre FROM clientes WHERE estado = 1 ALLOW FILTERING;",
+                                      "analysisMode": "LEXICAL_SYNTAX"
+                                    }
+                                    """
+                        ),
+                        @ExampleObject(
+                            name = "Cassandra CREATE TABLE",
+                            summary = "Analisis lexico/sintactico de Cassandra CREATE TABLE",
+                            value = """
+                                    {
+                                      "dialect": "CASSANDRA_CQL",
+                                      "sql": "CREATE TABLE clientes (id UUID PRIMARY KEY, nombre TEXT, estado INT);",
+                                      "analysisMode": "LEXICAL_SYNTAX"
+                                    }
+                                    """
                         )
                     }
                 )
             )
             CompilerAnalyzeRequest request) {
-        return ResponseEntity.ok(analysisService.analyze(request));
+        return ResponseEntity.ok(router.route(request));
     }
 
     @Operation(
-        summary = "Ejecutar analisis completo de sentencia SQL",
+        summary = "Ejecutar analisis completo de sentencia SQL/NoSQL",
         description = """
                 Ejecuta analisis lexico, sintactico y semantico.
 
-                Requiere datos de conexion a base de datos.
+                Para SQL: requiere datos de conexion a base de datos.
                 Valida tablas, columnas, aliases y funciones segun el motor seleccionado.
                 No ejecuta la sentencia SQL del usuario.
-                Utiliza metadatos JDBC para la validacion semantica.
+
+                Para NoSQL: el analisis semantico queda pendiente para una fase posterior.
                 """
     )
     @ApiResponses(value = {
@@ -198,11 +253,13 @@ public class CompilerController {
                 )
             )
             CompilerAnalyzeRequest request) {
-        if (request.getAnalysisMode() == AnalysisMode.LEXICAL_ONLY
-            || request.getAnalysisMode() == AnalysisMode.LEXICAL_SYNTAX) {
-            request.setAnalysisMode(AnalysisMode.FULL);
+        if (DialectMapper.isSql(request.getDialect())) {
+            if (request.getAnalysisMode() == AnalysisMode.LEXICAL_ONLY
+                || request.getAnalysisMode() == AnalysisMode.LEXICAL_SYNTAX) {
+                request.setAnalysisMode(AnalysisMode.FULL);
+            }
         }
-        return ResponseEntity.ok(analysisService.analyze(request));
+        return ResponseEntity.ok(router.route(request));
     }
 
     @Operation(

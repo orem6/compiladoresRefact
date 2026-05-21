@@ -99,4 +99,11 @@ class OpenApiDocumentationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.tags[0].name").value("Compiler API"));
     }
+
+    @Test
+    void testOpenApiIncludesNoSqlDialects() throws Exception {
+        mockMvc.perform(get("/api/compiler/openapi"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.components.schemas.CompilerAnalyzeRequest.properties.dialect.enum", hasItems("MONGODB", "CASSANDRA_CQL")));
+    }
 }

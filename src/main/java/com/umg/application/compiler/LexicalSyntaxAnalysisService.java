@@ -2,6 +2,9 @@ package com.umg.application.compiler;
 
 import com.umg.api.compiler.dto.*;
 import com.umg.api.compiler.mapper.CompilerResponseMapper;
+import com.umg.model.dialect.CompilerDialect;
+import com.umg.model.dialect.DialectMapper;
+import com.umg.model.dialect.NoSqlDialect;
 import com.umg.model.dialect.SqlDialect;
 import com.umg.model.error.CompilerError;
 import com.umg.model.error.ErrorCollector;
@@ -30,7 +33,8 @@ public class LexicalSyntaxAnalysisService {
     public CompilerAnalyzeResponse analyze(CompilerAnalyzeRequest request) {
         console.reset();
 
-        SqlDialect dialect = request.getDialect();
+        CompilerDialect compilerDialect = request.getDialect();
+        SqlDialect dialect = DialectMapper.toSqlDialect(compilerDialect);
         String sql = request.getSql().trim();
         AnalysisMode mode = request.getAnalysisMode();
         CompilerOptionsRequest options = request.getOptions() != null ? request.getOptions() : new CompilerOptionsRequest();
@@ -187,7 +191,7 @@ public class LexicalSyntaxAnalysisService {
 
         CompilerAnalyzeResponse response = new CompilerAnalyzeResponse();
         response.setRequestId(request.getRequestId());
-        response.setDialect(dialect);
+        response.setDialect(toCompilerDialect(dialect));
         response.setAnalysisMode(mode);
         response.setValid(valid);
         response.setMessage(message);
@@ -201,6 +205,15 @@ public class LexicalSyntaxAnalysisService {
         response.setConsole(console.build());
 
         return response;
+    }
+
+    private static CompilerDialect toCompilerDialect(SqlDialect sqlDialect) {
+        return switch (sqlDialect) {
+            case MYSQL -> CompilerDialect.MYSQL;
+            case POSTGRESQL -> CompilerDialect.POSTGRESQL;
+            case SQL_SERVER -> CompilerDialect.SQL_SERVER;
+            default -> throw new IllegalArgumentException("Unknown SqlDialect: " + sqlDialect);
+        };
     }
 
     private CompilerAnalyzeResponse analyzeLexicalSyntax(CompilerAnalyzeRequest request, SqlDialect dialect,
@@ -298,7 +311,7 @@ public class LexicalSyntaxAnalysisService {
 
         CompilerAnalyzeResponse response = new CompilerAnalyzeResponse();
         response.setRequestId(request.getRequestId());
-        response.setDialect(dialect);
+        response.setDialect(toCompilerDialect(dialect));
         response.setAnalysisMode(mode);
         response.setValid(!hasLexicalErrors && (syntaxResult == null || syntaxResult.isValid()));
         if (hasLexicalErrors) {
