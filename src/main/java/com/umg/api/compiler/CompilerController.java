@@ -1,10 +1,14 @@
 package com.umg.api.compiler;
 
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoDatabase;
 import com.umg.api.compiler.dto.*;
 import com.umg.application.compiler.LexicalSyntaxAnalysisService;
 import com.umg.model.dialect.SqlDialect;
 import com.umg.model.semantic.config.ConexionBaseDatosConfig;
+import com.umg.model.semantic.metadata.CqlConnectionFactory;
 import com.umg.model.semantic.metadata.JdbcConnectionFactory;
+import com.umg.model.semantic.metadata.MongoConnectionFactory;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -26,16 +30,23 @@ import java.util.Map;
 @RequestMapping("/api/compiler")
 @Tag(
     name = "Compiler API",
-    description = "Endpoints para analisis lexico, sintactico y semantico de sentencias SQL."
+    description = "Endpoints para analisis lexico, sintactico y semantico de sentencias SQL, CQL y MongoDB."
 )
 public class CompilerController {
 
     private final LexicalSyntaxAnalysisService analysisService;
-    private final JdbcConnectionFactory connectionFactory;
+    private final JdbcConnectionFactory jdbcConnectionFactory;
+    private final CqlConnectionFactory cqlConnectionFactory;
+    private final MongoConnectionFactory mongoConnectionFactory;
 
-    public CompilerController(LexicalSyntaxAnalysisService analysisService, JdbcConnectionFactory connectionFactory) {
+    public CompilerController(LexicalSyntaxAnalysisService analysisService,
+                              JdbcConnectionFactory jdbcConnectionFactory,
+                              CqlConnectionFactory cqlConnectionFactory,
+                              MongoConnectionFactory mongoConnectionFactory) {
         this.analysisService = analysisService;
-        this.connectionFactory = connectionFactory;
+        this.jdbcConnectionFactory = jdbcConnectionFactory;
+        this.cqlConnectionFactory = cqlConnectionFactory;
+        this.mongoConnectionFactory = mongoConnectionFactory;
     }
 
     @Operation(
@@ -294,7 +305,15 @@ public class CompilerController {
             return ResponseEntity.badRequest().body(result);
         }
 
-        try (Connection conexion = connectionFactory.crearConexion(config)) {
+        if (dialectToUse == SqlDialect.CASSANDRA) {
+            return testCqlConnection(result, config, dialectToUse);
+        }
+
+        if (dialectToUse == SqlDialect.MONGODB) {
+            return testMongoConnection(result, config, dialectToUse);
+        }
+
+        try (Connection conexion = jdbcConnectionFactory.crearConexion(config)) {
             boolean isValid = conexion.isValid(10);
             result.put("valid", isValid);
             result.put("message", isValid ? "Conexion exitosa a la base de datos." : "La conexion no respondio correctamente.");
@@ -311,6 +330,47 @@ public class CompilerController {
             result.put("error", e.getMessage());
         }
 
+        return ResponseEntity.ok(result);
+    }
+
+    private ResponseEntity<Map<String, Object>> testCqlConnection(Map<String, Object> result, ConexionBaseDatosConfig config, SqlDialect dialect) {
+        try (com.datastax.oss.driver.api.core.CqlSession session = cqlConnectionFactory.crearConexion(config)) {
+            boolean isValid = session.isClosed() == false;
+            result.put("valid", isValid);
+            result.put("message", isValid ? "Conexion exitosa a Cassandra." : "La conexion no respondio correctamente.");
+            result.put("status", isValid ? "SUCCESS" : "CONNECTION_FAILED");
+            result.put("dialect", dialect.name());
+            result.put("database", config.getBaseDatos());
+            result.put("host", config.getHost());
+            result.put("port", config.getPuerto());
+        } catch (Exception e) {
+            result.put("valid", false);
+            result.put("message", "Error de conexion Cassandra: " + e.getMessage());
+            result.put("status", "CONNECTION_ERROR");
+            result.put("error", e.getMessage());
+        }
+        return ResponseEntity.ok(result);
+    }
+
+    private ResponseEntity<Map<String, Object>> testMongoConnection(Map<String, Object> result, ConexionBaseDatosConfig config, SqlDialect dialect) {
+        try (MongoClient mongoClient = mongoConnectionFactory.crearConexion(config)) {
+            MongoDatabase db = mongoClient.getDatabase(
+                config.getBaseDatos() != null ? config.getBaseDatos() : "admin");
+            db.listCollectionNames().first();
+            boolean isValid = true;
+            result.put("valid", isValid);
+            result.put("message", isValid ? "Conexion exitosa a MongoDB." : "La conexion no respondio correctamente.");
+            result.put("status", isValid ? "SUCCESS" : "CONNECTION_FAILED");
+            result.put("dialect", dialect.name());
+            result.put("database", config.getBaseDatos());
+            result.put("host", config.getHost());
+            result.put("port", config.getPuerto());
+        } catch (Exception e) {
+            result.put("valid", false);
+            result.put("message", "Error de conexion MongoDB: " + e.getMessage());
+            result.put("status", "CONNECTION_ERROR");
+            result.put("error", e.getMessage());
+        }
         return ResponseEntity.ok(result);
     }
 }
