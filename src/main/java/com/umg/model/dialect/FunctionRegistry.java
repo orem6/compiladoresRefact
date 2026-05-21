@@ -83,6 +83,30 @@ public class FunctionRegistry {
         "PG_SLEEP", "PG_SLEEP_FOR"
     ));
 
+    private static final Set<String> CASSANDRA_FUNCTIONS = new HashSet<>(Arrays.asList(
+        "TOKEN", "WRITETIME", "TTL",
+        "NOW", "MINITIMEUUID", "MAXTIMEUUID",
+        "DATEOF", "UNIXTIMESTAMPOF",
+        "BLOBAS", "BIGINTASBLOB", "BOOLEANASBLOB",
+        "DATEASBLOB", "DECIMALASBLOB", "DOUBLEASBLOB",
+        "FLOATASBLOB", "INETASBLOB", "INTASBLOB",
+        "TEXTASBLOB", "TIMESTAMPASBLOB", "TIMEUUIDASBLOB",
+        "TINYINTASBLOB", "SMALLINTASBLOB", "UUIDASBLOB",
+        "VARCHARASBLOB", "VARINTASBLOB",
+        "BLOOBIGINT", "BLOBTOBOOLEAN", "BLOBTODATE",
+        "BLOBTODECIMAL", "BLOBTODOUBLE", "BLOBTOFLOAT",
+        "BLOBTOINET", "BLOBTOINT", "BLOBTOTEXT",
+        "BLOBTOTIMESTAMP", "BLOBTOTIMEUUID", "BLOBTOTINYINT",
+        "BLOBTOSMALLINT", "BLOBTOUUID", "BLOBTOVARCHAR",
+        "BLOBTOVARINT",
+        "CURRENT_DATE", "CURRENT_TIME", "CURRENT_TIMESTAMP",
+        "CURRENTUSER", "LOGIN",
+        "TOUNIXTIMESTAMP",
+        "TOTIMESTAMP", "TODATE",
+        "COUNT", "SUM", "AVG", "MIN", "MAX",
+        "NOW", "UUID", "TIMEUUID"
+    ));
+
     private static final Set<String> SQL_SERVER_FUNCTIONS = new HashSet<>(Arrays.asList(
         "GETDATE", "ISNULL", "LEN", "DATEADD", "DATEDIFF",
         "FORMAT", "NEWID", "SYSDATETIME",
@@ -157,6 +181,10 @@ public class FunctionRegistry {
         return SQL_SERVER_FUNCTIONS.contains(word.toUpperCase());
     }
 
+    public static boolean isCassandraFunction(String word) {
+        return CASSANDRA_FUNCTIONS.contains(word.toUpperCase());
+    }
+
     public static boolean isFunctionForDialect(String word, SqlDialect dialect) {
         String upper = word.toUpperCase();
         if (COMMON_FUNCTIONS.contains(upper)) return true;
@@ -164,6 +192,7 @@ public class FunctionRegistry {
             case MYSQL -> MYSQL_FUNCTIONS.contains(upper);
             case POSTGRESQL -> POSTGRESQL_FUNCTIONS.contains(upper);
             case SQL_SERVER -> SQL_SERVER_FUNCTIONS.contains(upper);
+            case CASSANDRA -> CASSANDRA_FUNCTIONS.contains(upper);
             default -> false;
         };
     }
@@ -173,6 +202,7 @@ public class FunctionRegistry {
         return COMMON_FUNCTIONS.contains(upper)
             || MYSQL_FUNCTIONS.contains(upper)
             || POSTGRESQL_FUNCTIONS.contains(upper)
-            || SQL_SERVER_FUNCTIONS.contains(upper);
+            || SQL_SERVER_FUNCTIONS.contains(upper)
+            || CASSANDRA_FUNCTIONS.contains(upper);
     }
 }

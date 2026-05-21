@@ -70,8 +70,7 @@ public class CompilerController {
     @GetMapping("/dialects")
     public ResponseEntity<Map<String, Object>> dialects() {
         return ResponseEntity.ok(Map.of(
-            "supportedDialects", List.of("MYSQL", "POSTGRESQL", "SQL_SERVER"),
-            "futureDialects", List.of("MONGODB")
+            "supportedDialects", List.of("MYSQL", "POSTGRESQL", "SQL_SERVER", "CASSANDRA", "MONGODB")
         ));
     }
 
