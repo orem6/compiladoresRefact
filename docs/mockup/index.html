@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SQL Compiler - Rediseño Propuesto</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 24px;
+    }
+    .mockup-container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      padding: 16px 24px;
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      border-radius: 16px;
+      backdrop-filter: blur(12px);
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .logo {
+      width: 44px; height: 44px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 16px; color: white;
+      box-shadow: 0 8px 24px rgba(59, 130, 246, 0.3);
+    }
+    .header-title h1 { font-size: 20px; font-weight: 700; color: #f1f5f9; }
+    .header-title p { font-size: 13px; color: #94a3b8; margin-top: 2px; }
+    .connection-badge {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 16px;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(148, 163, 184, 0.15);
+      border-radius: 100px;
+      font-size: 13px; color: #94a3b8;
+    }
+    .dot-green { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 8px rgba(34, 197, 94, 0.5); }
+    .dot-red { width: 8px; height: 8px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.5); }
+
+    /* Labels de sección para el mockup */
+    .section-label {
+      font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 1.2px;
+      margin-bottom: 10px; padding-left: 4px;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1.8fr 1fr;
+      gap: 22px;
+      margin-bottom: 22px;
+    }
+
+    .card {
+      background: rgba(30, 41, 59, 0.5);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      border-radius: 16px;
+      overflow: hidden;
+      backdrop-filter: blur(8px);
+      transition: border-color 0.2s;
+    }
+    .card:hover { border-color: rgba(148, 163, 184, 0.2); }
+
+    .card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+      background: rgba(15, 23, 42, 0.3);
+    }
+    .card-header h2 {
+      font-size: 14px; font-weight: 700; color: #e2e8f0;
+      letter-spacing: 0.3px;
+    }
+    .card-body { padding: 20px; }
+
+    /* Dialect selector mejorado */
+    .dialect-selector {
+      display: flex; gap: 6px;
+      background: rgba(15, 23, 42, 0.5);
+      padding: 4px;
+      border-radius: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.1);
+    }
+    .dialect-btn {
+      padding: 6px 14px;
+      border: none; border-radius: 8px;
+      font-size: 12px; font-weight: 600;
+      cursor: pointer;
+      background: transparent; color: #64748b;
+      transition: all 0.2s;
+    }
+    .dialect-btn.active {
+      background: #3b82f6;
+      color: white;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+    .dialect-btn:hover:not(.active) { color: #94a3b8; }
+
+    /* Editor SQL */
+    .sql-editor {
+      width: 100%;
+      min-height: 220px;
+      background: #0f172a;
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      border-radius: 12px;
+      padding: 16px;
+      color: #93c5fd;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      line-height: 1.7;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .sql-editor:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); }
+    .sql-editor::placeholder { color: #475569; }
+
+    .action-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: 14px;
+    }
+    .btn-group { display: flex; gap: 8px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 10px 18px;
+      border: none; border-radius: 10px;
+      font-size: 13px; font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: #3b82f6; color: white; }
+    .btn-primary:hover { background: #2563eb; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(59, 130, 246, 0.3); }
+    .btn-secondary { background: rgba(148, 163, 184, 0.1); color: #94a3b8; }
+    .btn-secondary:hover { background: rgba(148, 163, 184, 0.15); color: #e2e8f0; }
+    .btn-help { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+    .btn-help:hover { background: rgba(245, 158, 11, 0.25); }
+    .shortcut-hint {
+      font-size: 11px; color: #475569;
+      font-family: 'JetBrains Mono', monospace;
+      background: rgba(15, 23, 42, 0.5);
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(148, 163, 184, 0.08);
+    }
+
+    /* Connection form */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-grid .full { grid-column: 1 / -1; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field label { font-size: 12px; font-weight: 600; color: #94a3b8; }
+    .field input {
+      padding: 10px 12px;
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid rgba(148, 163, 184, 0.12);
+      border-radius: 10px;
+      color: #e2e8f0;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .field input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12); }
+    .field input::placeholder { color: #475569; }
+
+    .connection-actions {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: 16px; flex-wrap: wrap; gap: 10px;
+    }
+
+    .btn-connect { background: #22c55e; color: white; }
+    .btn-connect:hover { background: #16a34a; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(34, 197, 94, 0.3); }
+    .btn-disconnect { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+    .btn-disconnect:hover { background: rgba(239, 68, 68, 0.25); }
+
+    .toast-error {
+      margin-top: 12px;
+      padding: 12px 16px;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      border-radius: 10px;
+      font-size: 13px;
+    }
+    .toast-error strong { color: #fca5a5; display: block; margin-bottom: 3px; }
+    .toast-error p { color: #fca5a5; opacity: 0.8; }
+
+    /* Result tabs */
+    .tabs {
+      display: flex; gap: 4px;
+      background: rgba(15, 23, 42, 0.3);
+      padding: 4px; border-radius: 12px;
+      margin-bottom: 0;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+    }
+    .tab {
+      display: flex; align-items: center; gap: 6px;
+      padding: 10px 16px;
+      border: none; border-radius: 10px;
+      font-size: 12px; font-weight: 700;
+      cursor: pointer;
+      background: transparent; color: #64748b;
+      transition: all 0.2s;
+    }
+    .tab.active {
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+    }
+    .tab:hover:not(.active) { color: #94a3b8; }
+    .tab svg { width: 16px; height: 16px; }
+
+    .result-area {
+      padding: 20px;
+      min-height: 300px;
+    }
+
+    /* Console */
+    .console {
+      background: #0f172a;
+      border-radius: 12px;
+      padding: 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      line-height: 1.8;
+      min-height: 260px;
+    }
+    .console .info { color: #60a5fa; }
+    .console .success { color: #4ade80; }
+    .console .error { color: #f87171; }
+    .console .warn { color: #fbbf24; }
+
+    /* Token table */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th {
+      text-align: left;
+      padding: 10px 12px;
+      font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+      background: rgba(15, 23, 42, 0.3);
+    }
+    td { padding: 10px 12px; border-bottom: 1px solid rgba(148, 163, 184, 0.05); color: #cbd5e1; }
+    td .type-badge {
+      display: inline-block; padding: 2px 8px; border-radius: 6px;
+      font-size: 11px; font-weight: 600;
+    }
+    .type-reserved { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
+    .type-identifier { background: rgba(59, 130, 246, 0.12); color: #60a5fa; }
+    .type-number { background: rgba(34, 197, 94, 0.12); color: #4ade80; }
+    .type-string { background: rgba(245, 158, 11, 0.12); color: #fbbf24; }
+    .type-operator { background: rgba(236, 72, 153, 0.12); color: #f472b6; }
+
+    .lexeme-cell { font-family: 'JetBrains Mono', monospace; font-weight: 600; color: #e2e8f0; }
+    .line-cell { color: #64748b; }
+
+    /* Empty states */
+    .empty-state {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: 260px;
+      border: 2px dashed rgba(148, 163, 184, 0.1);
+      border-radius: 12px;
+      padding: 24px;
+      text-align: center;
+    }
+    .empty-state svg { width: 40px; height: 40px; color: #475569; margin-bottom: 12px; }
+    .empty-state h3 { font-size: 15px; color: #64748b; font-weight: 600; }
+    .empty-state p { font-size: 13px; color: #475569; margin-top: 4px; }
+
+    /* Loading */
+    .loading-state {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: 260px; gap: 12px;
+    }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid rgba(59, 130, 246, 0.1);
+      border-top-color: #3b82f6;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Footer comparison */
+    .comparison-footer {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 22px;
+      margin-top: 32px;
+      padding: 20px 24px;
+      background: rgba(30, 41, 59, 0.3);
+      border: 1px solid rgba(148, 163, 184, 0.08);
+      border-radius: 16px;
+    }
+    .comparison-footer h3 {
+      font-size: 14px; font-weight: 700; margin-bottom: 12px;
+    }
+    .comparison-footer ul { list-style: none; }
+    .comparison-footer li {
+      font-size: 13px; color: #94a3b8;
+      padding: 6px 0;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .comparison-footer .check { color: #4ade80; font-weight: bold; }
+    .comparison-footer .cross { color: #f87171; font-weight: bold; }
+
+    /* Helper icons inline SVG */
+    .icon-terminal { width:16px;height:16px; viewBox:0 0 24 24; fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round; }
+    .icon-hash { width:16px;height:16px; }
+    .icon-brain { width:16px;height:16px; }
+    .icon-alert { width:16px;height:16px; }
+
+    .features-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 16px; margin-top: 24px;
+    }
+    .feature-card {
+      padding: 20px;
+      background: rgba(30, 41, 59, 0.4);
+      border: 1px solid rgba(148, 163, 184, 0.08);
+      border-radius: 12px;
+      text-align: center;
+    }
+    .feature-card .icon-circle {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 10px;
+      font-size: 20px;
+    }
+    .feature-card h4 { font-size: 14px; font-weight: 700; color: #e2e8f0; margin-bottom: 4px; }
+    .feature-card p { font-size: 12px; color: #64748b; }
+
+    .badge {
+      display: inline-block; padding: 10px 20px; border-radius: 100px;
+      font-size: 14px; font-weight: 700;
+      text-decoration: none;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .badge-download {
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      color: white;
+      box-shadow: 0 8px 24px rgba(59, 130, 246, 0.3);
+    }
+    .badge-download:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(59, 130, 246, 0.4); }
+  </style>
+</head>
+<body>
+
+<div class="mockup-container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="logo">SQL</div>
+      <div class="header-title">
+        <h1>SQL Compiler</h1>
+        <p>Analizador léxico, sintáctico y semántico para motores SQL</p>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div class="connection-badge">
+        <span class="dot-green"></span>
+        Estado de conexión: <strong style="color:#e2e8f0;">Conectado</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Grid -->
+  <div class="main-grid">
+    <!-- Editor Panel -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Consulta SQL</h2>
+        <div class="dialect-selector">
+          <button class="dialect-btn active">MySQL</button>
+          <button class="dialect-btn">PostgreSQL</button>
+          <button class="dialect-btn">SQL Server</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <textarea class="sql-editor" placeholder="Escribe tu consulta SQL aqui...">SELECT c.id, c.nombre, COUNT(p.id) AS total_pedidos
+FROM clientes c
+LEFT JOIN pedidos p ON p.cliente_id = c.id
+WHERE c.estado = 1
+GROUP BY c.id, c.nombre
+ORDER BY c.nombre ASC;</textarea>
+        <div class="action-bar">
+          <div class="btn-group">
+            <button class="btn btn-primary">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Analizar
+            </button>
+            <button class="btn btn-secondary">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              Limpiar
+            </button>
+            <button class="btn btn-help">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              Ayuda
+            </button>
+          </div>
+          <span class="shortcut-hint">Ctrl + Enter</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Connection Panel -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Conexión BD</h2>
+      </div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="field">
+            <label>Host</label>
+            <input type="text" value="localhost" placeholder="localhost" readonly>
+          </div>
+          <div class="field">
+            <label>Puerto</label>
+            <input type="text" value="3306" placeholder="3306" readonly>
+          </div>
+          <div class="field full">
+            <label>Base de datos</label>
+            <input type="text" value="compilador_prueba" placeholder="nombre_base_datos" readonly>
+          </div>
+          <div class="field">
+            <label>Usuario</label>
+            <input type="text" value="root" placeholder="root" readonly>
+          </div>
+          <div class="field">
+            <label>Contraseña</label>
+            <input type="password" value="********" placeholder="********" readonly>
+          </div>
+        </div>
+        <div class="connection-actions">
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-connect" disabled style="opacity:0.6;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              Conectar
+            </button>
+            <button class="btn btn-disconnect">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+              Desconectar
+            </button>
+          </div>
+          <span style="display:flex;align-items:center;gap:6px;padding:4px 12px;border-radius:100px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);font-size:12px;font-weight:600;color:#4ade80;">
+            <span class="dot-green" style="width:6px;height:6px;"></span> Conectado
+          </span>
+        </div>
+        <div class="toast-error">
+          <strong> Error de conexión</strong>
+          <p>No se pudo conectar a la base de datos. Verifica las credenciales.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="card">
+    <div class="tabs">
+      <button class="tab active" style="display:flex;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+        Consola
+      </button>
+      <button class="tab">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
+        Tokens
+      </button>
+      <button class="tab">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1.1"/><path d="M18 19H4a2 2 0 0 1-2-2v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h.1"/><path d="M9 13a3 3 0 0 1 6 0"/><path d="M11 17a1 1 0 0 1 2 0"/></svg>
+        Semántico
+      </button>
+      <button class="tab">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Errores
+      </button>
+    </div>
+    <div class="result-area">
+      <!-- Console output -->
+      <div class="console">
+        <div class="info">[INFO] Iniciando análisis SQL.</div>
+        <div class="info">[INFO] Dialecto seleccionado: MYSQL</div>
+        <div class="info">[INFO] Modo de análisis: FULL</div>
+        <div class="info">[INFO] Configuración de base de datos válida.</div>
+        <div class="info">[INFO] Iniciando análisis semántico...</div>
+        <div class="success">[SUCCESS] Análisis léxico finalizado sin errores.</div>
+        <div class="success">[SUCCESS] Análisis sintáctico finalizado sin errores.</div>
+        <div class="success">[SUCCESS] Análisis semántico finalizado sin errores.</div>
+        <div class="success">[SUCCESS] Sentencia válida a nivel léxico, sintáctico y semántico.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Features -->
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="icon-circle" style="background:rgba(59,130,246,0.15);color:#60a5fa;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+      </div>
+      <h4>Análisis Léxico</h4>
+      <p>Tokenización completa de sentencias SQL con detección de errores léxicos</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon-circle" style="background:rgba(139,92,246,0.15);color:#a78bfa;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      </div>
+      <h4>Análisis Sintáctico</h4>
+      <p>Parser de sentencias SELECT, INSERT, UPDATE, DELETE, CREATE, JOINs y más</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon-circle" style="background:rgba(34,197,94,0.15);color:#4ade80;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <h4>Análisis Semántico</h4>
+      <p>Validación contra BD real: tablas, columnas, tipos y esquemas</p>
+    </div>
+  </div>
+
+  <!-- Download section -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-top:32px;padding:24px;background:linear-gradient(135deg,rgba(59,130,246,0.08),rgba(139,92,246,0.08));border:1px solid rgba(148,163,184,0.1);border-radius:16px;">
+    <div>
+      <h3 style="font-size:18px;font-weight:700;color:#f1f5f9;">¿Te gusta este rediseño?</h3>
+      <p style="font-size:14px;color:#94a3b8;margin-top:4px;">Este mockup muestra las mejoras visuales propuestas para el frontend.</p>
+    </div>
+    <a href="index.html" download class="badge badge-download" style="display:inline-flex;align-items:center;gap:8px;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Descargar Mockup
+    </button>
+  </div>
+
+</div>
+</body>
+</html>
