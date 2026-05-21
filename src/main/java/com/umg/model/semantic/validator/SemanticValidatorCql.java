@@ -54,7 +54,7 @@ public class SemanticValidatorCql {
     private void validarSelect(ReferenciasSql referencias, DatabaseMetadataService metadata, List<ErrorSemantico> errores) {
         Set<String> tablasEntidad = new HashSet<>();
         for (ReferenciaTabla tabla : referencias.getTablas()) {
-            String entidad = tabla.getNombreCompleto();
+            String entidad = nombreCompletoTabla(tabla);
             if (tablasEntidad.add(entidad)) {
                 if (!metadata.existeTabla(tabla.getEsquema(), tabla.getNombre())) {
                     errores.add(new ErrorSemantico(
@@ -65,17 +65,15 @@ public class SemanticValidatorCql {
         }
 
         for (ReferenciaColumna col : referencias.getColumnas()) {
-            if (!col.esComodin() && !col.esExpresion()) {
-                for (ReferenciaTabla tabla : referencias.getTablas()) {
-                    if (tabla.getNombre().equalsIgnoreCase(col.getTabla()) || col.getTabla() == null) {
-                        String esquema = col.getTabla() != null ? tabla.getEsquema() : null;
-                        if (!metadata.existeColumna(esquema, tabla.getNombre(), col.getNombre())) {
-                            errores.add(new ErrorSemantico(
-                                "SEM_COLUMN_NOT_FOUND", "La columna '" + col.getNombreCompleto() + "' no existe en la tabla '" + tabla.getNombreCompleto() + "'",
-                                col.getNombreCompleto(), null, col.getLinea(), col.getColumna()));
-                        }
-                        break;
+            for (ReferenciaTabla tabla : referencias.getTablas()) {
+                if (tabla.getNombre().equalsIgnoreCase(col.getTablaOAlias()) || col.getTablaOAlias() == null) {
+                    String colName = nombreCompletoColumna(col);
+                    if (!metadata.existeColumna(tabla.getEsquema(), tabla.getNombre(), col.getNombre())) {
+                        errores.add(new ErrorSemantico(
+                            "SEM_COLUMN_NOT_FOUND", "La columna '" + colName + "' no existe en la tabla '" + nombreCompletoTabla(tabla) + "'",
+                            colName, null, col.getLinea(), col.getColumna()));
                     }
+                    break;
                 }
             }
         }
@@ -83,20 +81,21 @@ public class SemanticValidatorCql {
 
     private void validarInsert(ReferenciasSql referencias, DatabaseMetadataService metadata, List<ErrorSemantico> errores) {
         for (ReferenciaTabla tabla : referencias.getTablas()) {
+            String entidad = nombreCompletoTabla(tabla);
             if (!metadata.existeTabla(tabla.getEsquema(), tabla.getNombre())) {
                 errores.add(new ErrorSemantico(
-                    "SEM_TABLE_NOT_FOUND", "La tabla '" + tabla.getNombreCompleto() + "' no existe en Cassandra",
-                    tabla.getNombreCompleto(), null, tabla.getLinea(), tabla.getColumna()));
+                    "SEM_TABLE_NOT_FOUND", "La tabla '" + entidad + "' no existe en Cassandra",
+                    entidad, null, tabla.getLinea(), tabla.getColumna()));
             }
         }
 
         for (ReferenciaColumna col : referencias.getColumnas()) {
             for (ReferenciaTabla tabla : referencias.getTablas()) {
-                if (tabla.getNombre().equalsIgnoreCase(col.getTabla()) || col.getTabla() == null) {
+                if (tabla.getNombre().equalsIgnoreCase(col.getTablaOAlias()) || col.getTablaOAlias() == null) {
                     if (!metadata.existeColumna(tabla.getEsquema(), tabla.getNombre(), col.getNombre())) {
                         errores.add(new ErrorSemantico(
-                            "SEM_COLUMN_NOT_FOUND", "La columna '" + col.getNombreCompleto() + "' no existe en la tabla '" + tabla.getNombreCompleto() + "'",
-                            col.getNombreCompleto(), null, col.getLinea(), col.getColumna()));
+                            "SEM_COLUMN_NOT_FOUND", "La columna '" + nombreCompletoColumna(col) + "' no existe en la tabla '" + nombreCompletoTabla(tabla) + "'",
+                            nombreCompletoColumna(col), null, col.getLinea(), col.getColumna()));
                     }
                     break;
                 }
@@ -110,10 +109,11 @@ public class SemanticValidatorCql {
 
     private void validarDelete(ReferenciasSql referencias, DatabaseMetadataService metadata, List<ErrorSemantico> errores) {
         for (ReferenciaTabla tabla : referencias.getTablas()) {
+            String entidad = nombreCompletoTabla(tabla);
             if (!metadata.existeTabla(tabla.getEsquema(), tabla.getNombre())) {
                 errores.add(new ErrorSemantico(
-                    "SEM_TABLE_NOT_FOUND", "La tabla '" + tabla.getNombreCompleto() + "' no existe en Cassandra",
-                    tabla.getNombreCompleto(), null, tabla.getLinea(), tabla.getColumna()));
+                    "SEM_TABLE_NOT_FOUND", "La tabla '" + entidad + "' no existe en Cassandra",
+                    entidad, null, tabla.getLinea(), tabla.getColumna()));
             }
         }
     }
@@ -122,12 +122,13 @@ public class SemanticValidatorCql {
                                      boolean ifExists, List<ErrorSemantico> errores, List<String> advertencias) {
         for (ReferenciaTabla tabla : referencias.getTablas()) {
             boolean existe = metadata.existeTabla(tabla.getEsquema(), tabla.getNombre());
+            String entidad = nombreCompletoTabla(tabla);
             if (existe && !ifExists) {
                 errores.add(new ErrorSemantico(
-                    "SEM_TABLE_ALREADY_EXISTS", "La tabla '" + tabla.getNombreCompleto() + "' ya existe en Cassandra",
-                    tabla.getNombreCompleto(), null, tabla.getLinea(), tabla.getColumna()));
+                    "SEM_TABLE_ALREADY_EXISTS", "La tabla '" + entidad + "' ya existe en Cassandra",
+                    entidad, null, tabla.getLinea(), tabla.getColumna()));
             } else if (existe) {
-                advertencias.add("La tabla '" + tabla.getNombreCompleto() + "' ya existe. IF NOT EXISTS evita el error.");
+                advertencias.add("La tabla '" + entidad + "' ya existe. IF NOT EXISTS evita el error.");
             }
         }
     }
@@ -140,10 +141,11 @@ public class SemanticValidatorCql {
                                    boolean ifExists, List<ErrorSemantico> errores) {
         for (ReferenciaTabla tabla : referencias.getTablas()) {
             boolean existe = metadata.existeTabla(tabla.getEsquema(), tabla.getNombre());
+            String entidad = nombreCompletoTabla(tabla);
             if (!existe && !ifExists) {
                 errores.add(new ErrorSemantico(
-                    "SEM_TABLE_NOT_FOUND", "La tabla '" + tabla.getNombreCompleto() + "' no existe en Cassandra",
-                    tabla.getNombreCompleto(), null, tabla.getLinea(), tabla.getColumna()));
+                    "SEM_TABLE_NOT_FOUND", "La tabla '" + entidad + "' no existe en Cassandra",
+                    entidad, null, tabla.getLinea(), tabla.getColumna()));
             }
         }
     }
@@ -154,15 +156,30 @@ public class SemanticValidatorCql {
 
     private void validarAlterTable(ReferenciasSql referencias, DatabaseMetadataService metadata, List<ErrorSemantico> errores) {
         for (ReferenciaTabla tabla : referencias.getTablas()) {
+            String entidad = nombreCompletoTabla(tabla);
             if (!metadata.existeTabla(tabla.getEsquema(), tabla.getNombre())) {
                 errores.add(new ErrorSemantico(
-                    "SEM_TABLE_NOT_FOUND", "La tabla '" + tabla.getNombreCompleto() + "' no existe en Cassandra",
-                    tabla.getNombreCompleto(), null, tabla.getLinea(), tabla.getColumna()));
+                    "SEM_TABLE_NOT_FOUND", "La tabla '" + entidad + "' no existe en Cassandra",
+                    entidad, null, tabla.getLinea(), tabla.getColumna()));
             }
         }
     }
 
     private void validarTruncate(ReferenciasSql referencias, DatabaseMetadataService metadata, List<ErrorSemantico> errores) {
         validarDelete(referencias, metadata, errores);
+    }
+
+    private String nombreCompletoTabla(ReferenciaTabla tabla) {
+        if (tabla.getEsquema() != null) {
+            return tabla.getEsquema() + "." + tabla.getNombre();
+        }
+        return tabla.getNombre();
+    }
+
+    private String nombreCompletoColumna(ReferenciaColumna col) {
+        if (col.getTablaOAlias() != null) {
+            return col.getTablaOAlias() + "." + col.getNombre();
+        }
+        return col.getNombre();
     }
 }

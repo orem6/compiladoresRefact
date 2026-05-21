@@ -31,11 +31,12 @@ public class CqlParser {
         skipComments();
         Token current = tokens.get(position);
 
-        if (current.getType() == TokenType.EOF) return null;
+        if (current.getType() == TokenType.EOF || current.getType() == TokenType.EOF_OLD) return null;
 
         if (current.getType() != TokenType.PALABRA_RESERVADA &&
             current.getType() != TokenType.KEYWORD &&
-            current.getType() != TokenType.IDENTIFICADOR) {
+            current.getType() != TokenType.IDENTIFICADOR &&
+            current.getType() != TokenType.IDENTIFIER) {
             addError("Se esperaba una palabra clave CQL al inicio de la sentencia", current);
             return null;
         }
@@ -65,19 +66,19 @@ public class CqlParser {
             consume();
         }
 
-        if (checkTokenType(TokenType.ASTERISCO)) {
+        if (checkTokenType(TokenType.ASTERISCO) || checkTokenType(TokenType.STAR)) {
             consume();
         } else if (checkKeyword("DISTINCT")) {
             consume();
-            parseColumnsUntilFrom(stmt);
+            parseColumnsUntilFrom();
         } else {
-            parseColumnsUntilFrom(stmt);
+            parseColumnsUntilFrom();
         }
 
         if (checkKeyword("FROM")) {
             consume();
             if (position < tokens.size()) {
-                stmt.setTableName(consume().getLexeme());
+                consume();
             }
         }
 
@@ -89,26 +90,28 @@ public class CqlParser {
         if (checkKeyword("GROUP") && peekKeyword("BY")) {
             consume();
             consume();
-            while (position < tokens.size() && !checkTokenType(TokenType.PUNTO_Y_COMA) && !checkTokenType(TokenType.EOF) && !peekKeyword("ORDER") && !peekKeyword("LIMIT") && !peekKeyword("ALLOW") && !peekKeyword("PER")) {
+            while (position < tokens.size() && !checkTokenType(TokenType.PUNTO_Y_COMA) && !checkTokenType(TokenType.SEMICOLON) && !checkTokenType(TokenType.EOF) && !checkTokenType(TokenType.EOF_OLD)) {
+                if (peekKeyword("ORDER") || peekKeyword("LIMIT") || peekKeyword("ALLOW") || peekKeyword("PER")) break;
                 consume();
-                if (checkTokenType(TokenType.COMA)) consume();
+                if (checkTokenType(TokenType.COMA) || checkTokenType(TokenType.COMMA)) consume();
             }
         }
 
         if (checkKeyword("ORDER") && peekKeyword("BY")) {
             consume();
             consume();
-            while (position < tokens.size() && !checkTokenType(TokenType.PUNTO_Y_COMA) && !checkTokenType(TokenType.EOF) && !peekKeyword("LIMIT") && !peekKeyword("ALLOW") && !peekKeyword("PER")) {
+            while (position < tokens.size() && !checkTokenType(TokenType.PUNTO_Y_COMA) && !checkTokenType(TokenType.SEMICOLON) && !checkTokenType(TokenType.EOF) && !checkTokenType(TokenType.EOF_OLD)) {
+                if (peekKeyword("LIMIT") || peekKeyword("ALLOW") || peekKeyword("PER")) break;
                 consume();
                 if (checkKeyword("ASC") || checkKeyword("DESC")) consume();
-                if (checkTokenType(TokenType.COMA)) consume();
+                if (checkTokenType(TokenType.COMA) || checkTokenType(TokenType.COMMA)) consume();
             }
         }
 
-        if (checkKeyword("PER") && peekKeyword("PARTITION") && peekNextKeyword("LIMIT")) {
+        if (checkKeyword("PER") && peekKeyword("PARTITION")) {
             consume();
             consume();
-            consume();
+            if (peekKeyword("LIMIT")) consume();
             if (position < tokens.size()) consume();
         }
 
@@ -125,19 +128,19 @@ public class CqlParser {
         return stmt;
     }
 
-    private void parseColumnsUntilFrom(SelectStatement stmt) {
-        while (position < tokens.size() && !checkKeyword("FROM") && !checkTokenType(TokenType.PUNTO_Y_COMA) && !checkTokenType(TokenType.EOF)) {
+    private void parseColumnsUntilFrom() {
+        while (position < tokens.size() && !checkKeyword("FROM") && !checkTokenType(TokenType.PUNTO_Y_COMA) && !checkTokenType(TokenType.SEMICOLON) && !checkTokenType(TokenType.EOF) && !checkTokenType(TokenType.EOF_OLD)) {
             consume();
-            if (checkTokenType(TokenType.COMA)) consume();
+            if (checkTokenType(TokenType.COMA) || checkTokenType(TokenType.COMMA)) consume();
         }
     }
 
     private void parseWhereClause() {
-        while (position < tokens.size() && !checkTokenType(TokenType.PUNTO_Y_COMA) && !checkTokenType(TokenType.EOF)) {
+        while (position < tokens.size() && !checkTokenType(TokenType.PUNTO_Y_COMA) && !checkTokenType(TokenType.SEMICOLON) && !checkTokenType(TokenType.EOF) && !checkTokenType(TokenType.EOF_OLD)) {
             if (peekKeyword("ALLOW") || peekKeyword("ORDER") || peekKeyword("LIMIT") || peekKeyword("PER") || peekKeyword("GROUP")) break;
             if (peekKeyword("AND") || peekKeyword("OR")) consume();
             consume();
-            if (checkTokenType(TokenType.OPERADOR_COMPARACION) || checkTokenType(TokenType.ASIGNACION)) consume();
+            if (checkTokenType(TokenType.OPERADOR_COMPARACION) || checkTokenType(TokenType.OPERADOR) || checkTokenType(TokenType.OPERATOR)) consume();
             consumeValue();
         }
     }
@@ -145,7 +148,11 @@ public class CqlParser {
     private void consumeValue() {
         if (position >= tokens.size()) return;
         Token t = tokens.get(position);
-        if (t.getType() == TokenType.CADENA || t.getType() == TokenType.NUMERO || t.getType() == TokenType.IDENTIFICADOR || t.getType() == TokenType.PALABRA_RESERVADA) {
+        if (t.getType() == TokenType.CADENA || t.getType() == TokenType.STRING_LITERAL ||
+            t.getType() == TokenType.NUMERO_ENTERO || t.getType() == TokenType.INTEGER ||
+            t.getType() == TokenType.NUMERO_DECIMAL || t.getType() == TokenType.DECIMAL ||
+            t.getType() == TokenType.IDENTIFICADOR || t.getType() == TokenType.IDENTIFIER ||
+            t.getType() == TokenType.PALABRA_RESERVADA || t.getType() == TokenType.KEYWORD) {
             consume();
         }
     }
@@ -157,27 +164,27 @@ public class CqlParser {
         if (checkKeyword("INTO")) consume();
 
         if (position < tokens.size()) {
-            stmt.setTableName(consume().getLexeme());
+            consume();
         }
 
-        if (checkTokenType(TokenType.PARENTESIS_IZQ)) {
+        if (checkTokenType(TokenType.PARENTESIS_IZQUIERDO) || checkTokenType(TokenType.LPAREN)) {
             consume();
-            while (!checkTokenType(TokenType.PARENTESIS_DER) && position < tokens.size()) {
+            while (!checkTokenType(TokenType.PARENTESIS_DERECHO) && !checkTokenType(TokenType.RPAREN) && position < tokens.size()) {
                 consume();
-                if (checkTokenType(TokenType.COMA)) consume();
+                if (checkTokenType(TokenType.COMA) || checkTokenType(TokenType.COMMA)) consume();
             }
-            if (checkTokenType(TokenType.PARENTESIS_DER)) consume();
+            if (checkTokenType(TokenType.PARENTESIS_DERECHO) || checkTokenType(TokenType.RPAREN)) consume();
         }
 
         if (checkKeyword("VALUES")) {
             consume();
-            if (checkTokenType(TokenType.PARENTESIS_IZQ)) {
+            if (checkTokenType(TokenType.PARENTESIS_IZQUIERDO) || checkTokenType(TokenType.LPAREN)) {
                 consume();
-                while (!checkTokenType(TokenType.PARENTESIS_DER) && position < tokens.size()) {
+                while (!checkTokenType(TokenType.PARENTESIS_DERECHO) && !checkTokenType(TokenType.RPAREN) && position < tokens.size()) {
                     consume();
-                    if (checkTokenType(TokenType.COMA)) consume();
+                    if (checkTokenType(TokenType.COMA) || checkTokenType(TokenType.COMMA)) consume();
                 }
-                if (checkTokenType(TokenType.PARENTESIS_DER)) consume();
+                if (checkTokenType(TokenType.PARENTESIS_DERECHO) || checkTokenType(TokenType.RPAREN)) consume();
             }
         }
 
@@ -211,16 +218,16 @@ public class CqlParser {
         }
 
         if (position < tokens.size()) {
-            stmt.setTableName(consume().getLexeme());
+            consume();
         }
 
         if (checkKeyword("SET")) {
             consume();
-            while (position < tokens.size() && !checkKeyword("WHERE") && !checkTokenType(TokenType.PUNTO_Y_COMA) && !checkTokenType(TokenType.EOF)) {
+            while (position < tokens.size() && !checkKeyword("WHERE") && !checkTokenType(TokenType.PUNTO_Y_COMA) && !checkTokenType(TokenType.SEMICOLON) && !checkTokenType(TokenType.EOF) && !checkTokenType(TokenType.EOF_OLD)) {
                 consume();
-                if (checkTokenType(TokenType.ASIGNACION)) consume();
+                if (checkTokenType(TokenType.OPERADOR_COMPARACION) || checkTokenType(TokenType.OPERADOR) || checkTokenType(TokenType.OPERATOR)) consume();
                 consumeValue();
-                if (checkTokenType(TokenType.COMA)) consume();
+                if (checkTokenType(TokenType.COMA) || checkTokenType(TokenType.COMMA)) consume();
             }
         }
 
@@ -239,7 +246,7 @@ public class CqlParser {
         if (checkKeyword("FROM")) consume();
 
         if (position < tokens.size()) {
-            stmt.setTableName(consume().getLexeme());
+            consume();
         }
 
         if (checkKeyword("USING")) {
@@ -277,22 +284,22 @@ public class CqlParser {
             consume();
             return parseCreateMaterializedView();
         }
-        addError("CREATE debe ser KEYSPACE, TABLE, TYPE, INDEX o MATERIALIZED VIEW");
+        addError("CREATE debe ser KEYSPACE, TABLE, TYPE, INDEX o MATERIALIZED VIEW", null);
         return null;
     }
 
     private ASTNode parseCreateKeyspace() {
-        CreateTableStatement stmt = new CreateTableStatement();
-
-        if (checkKeyword("IF") && peekKeyword("NOT") && peekNextKeyword("EXISTS")) {
+        if (checkKeyword("IF") && peekKeyword("NOT")) {
             consume();
+            if (peekKeyword("EXISTS")) consume();
+            consume();
+        } else if (checkKeyword("IF") && peekKeyword("EXISTS")) {
             consume();
             consume();
         }
 
         if (position < tokens.size()) {
-            String keyspaceName = consume().getLexeme();
-            stmt.setTableName(keyspaceName);
+            consume();
         }
 
         if (checkKeyword("WITH")) {
@@ -305,24 +312,26 @@ public class CqlParser {
             if (checkKeyword("DURABLE") && peekKeyword("WRITES")) {
                 consume();
                 consume();
-                if (position < tokens.size()) consume();
+                if (position < tokens.size() && !checkTokenType(TokenType.PUNTO_Y_COMA) && !checkTokenType(TokenType.SEMICOLON)) {
+                    consume();
+                }
             }
         }
 
-        return stmt;
+        return new CreateTableStatement();
     }
 
     private void parseReplication() {
         if (checkKeyword("REPLICATION")) {
             consume();
-            consume();
-            if (checkTokenType(TokenType.PARENTESIS_IZQ)) {
+            if (checkTokenType(TokenType.OPERADOR_COMPARACION) || checkTokenType(TokenType.OPERADOR) || checkTokenType(TokenType.OPERATOR)) consume();
+            if (checkTokenType(TokenType.PARENTESIS_IZQUIERDO) || checkTokenType(TokenType.LPAREN)) {
                 int depth = 1;
                 consume();
                 while (depth > 0 && position < tokens.size()) {
                     Token t = tokens.get(position);
-                    if (t.getType() == TokenType.PARENTESIS_IZQ) depth++;
-                    if (t.getType() == TokenType.PARENTESIS_DER) depth--;
+                    if (t.getType() == TokenType.PARENTESIS_IZQUIERDO || t.getType() == TokenType.LPAREN) depth++;
+                    if (t.getType() == TokenType.PARENTESIS_DERECHO || t.getType() == TokenType.RPAREN) depth--;
                     consume();
                 }
             }
@@ -330,55 +339,59 @@ public class CqlParser {
     }
 
     private ASTNode parseCreateTable() {
-        CreateTableStatement stmt = new CreateTableStatement();
-
-        if (checkKeyword("IF") && peekKeyword("NOT") && peekNextKeyword("EXISTS")) {
+        if (checkKeyword("IF") && peekKeyword("NOT")) {
             consume();
+            if (peekKeyword("EXISTS")) consume();
+            consume();
+        } else if (checkKeyword("IF") && peekKeyword("EXISTS")) {
             consume();
             consume();
         }
 
         if (position < tokens.size()) {
-            stmt.setTableName(consume().getLexeme());
+            consume();
         }
 
-        if (checkTokenType(TokenType.PARENTESIS_IZQ)) {
+        if (checkTokenType(TokenType.PARENTESIS_IZQUIERDO) || checkTokenType(TokenType.LPAREN)) {
             consume();
             int depth = 1;
             while (depth > 0 && position < tokens.size()) {
                 Token t = tokens.get(position);
-                if (t.getType() == TokenType.PARENTESIS_IZQ) depth++;
-                if (t.getType() == TokenType.PARENTESIS_DER) depth--;
+                if (t.getType() == TokenType.PARENTESIS_IZQUIERDO || t.getType() == TokenType.LPAREN) depth++;
+                if (t.getType() == TokenType.PARENTESIS_DERECHO || t.getType() == TokenType.RPAREN) depth--;
                 consume();
             }
         }
 
         if (checkKeyword("WITH")) {
             consume();
-            while (position < tokens.size() && !checkTokenType(TokenType.PUNTO_Y_COMA) && !checkTokenType(TokenType.EOF)) {
+            while (position < tokens.size() && !checkTokenType(TokenType.PUNTO_Y_COMA) && !checkTokenType(TokenType.SEMICOLON) && !checkTokenType(TokenType.EOF) && !checkTokenType(TokenType.EOF_OLD)) {
                 consume();
-                if (checkTokenType(TokenType.ASIGNACION)) consume();
-                if (checkTokenType(TokenType.COMA)) break;
+                if (checkTokenType(TokenType.OPERADOR_COMPARACION) || checkTokenType(TokenType.OPERADOR) || checkTokenType(TokenType.OPERATOR)) consume();
+                if (checkTokenType(TokenType.COMA) || checkTokenType(TokenType.COMMA)) break;
             }
         }
 
-        return stmt;
+        return new CreateTableStatement();
     }
 
     private ASTNode parseCreateType() {
-        if (checkKeyword("IF") && peekKeyword("NOT") && peekNextKeyword("EXISTS")) {
+        if (checkKeyword("IF") && peekKeyword("NOT")) {
             consume();
+            if (peekKeyword("EXISTS")) consume();
+            consume();
+        } else if (checkKeyword("IF") && peekKeyword("EXISTS")) {
             consume();
             consume();
         }
         if (position < tokens.size()) consume();
-        if (checkTokenType(TokenType.PARENTESIS_IZQ)) {
+        if (checkTokenType(TokenType.PARENTESIS_IZQUIERDO) || checkTokenType(TokenType.LPAREN)) {
             int depth = 1;
             consume();
             while (depth > 0 && position < tokens.size()) {
                 Token t = tokens.get(position);
-                if (t.getType() == TokenType.PARENTESIS_IZQ) depth++;
-                if (t.getType() == TokenType.PARENTESIS_DER) depth--;
+                if (t.getType() == TokenType.PARENTESIS_IZQUIERDO || t.getType() == TokenType.LPAREN) depth++;
+                if (t.getType() == TokenType.PARENTESIS_DERECHO || t.getType() == TokenType.RPAREN) depth--;
                 consume();
             }
         }
@@ -386,22 +399,24 @@ public class CqlParser {
     }
 
     private ASTNode parseCreateIndex() {
-        consume();
-        if (checkKeyword("IF") && peekKeyword("NOT") && peekNextKeyword("EXISTS")) {
+        if (checkKeyword("IF") && peekKeyword("NOT")) {
             consume();
+            if (peekKeyword("EXISTS")) consume();
+            consume();
+        } else if (checkKeyword("IF") && peekKeyword("EXISTS")) {
             consume();
             consume();
         }
         if (checkKeyword("ON")) {
             consume();
             if (position < tokens.size()) consume();
-            if (checkTokenType(TokenType.PARENTESIS_IZQ)) {
+            if (checkTokenType(TokenType.PARENTESIS_IZQUIERDO) || checkTokenType(TokenType.LPAREN)) {
                 int depth = 1;
                 consume();
                 while (depth > 0 && position < tokens.size()) {
                     Token t = tokens.get(position);
-                    if (t.getType() == TokenType.PARENTESIS_IZQ) depth++;
-                    if (t.getType() == TokenType.PARENTESIS_DER) depth--;
+                    if (t.getType() == TokenType.PARENTESIS_IZQUIERDO || t.getType() == TokenType.LPAREN) depth++;
+                    if (t.getType() == TokenType.PARENTESIS_DERECHO || t.getType() == TokenType.RPAREN) depth--;
                     consume();
                 }
             }
@@ -410,15 +425,18 @@ public class CqlParser {
     }
 
     private ASTNode parseCreateMaterializedView() {
-        if (checkKeyword("IF") && peekKeyword("NOT") && peekNextKeyword("EXISTS")) {
+        if (checkKeyword("IF") && peekKeyword("NOT")) {
             consume();
+            if (peekKeyword("EXISTS")) consume();
+            consume();
+        } else if (checkKeyword("IF") && peekKeyword("EXISTS")) {
             consume();
             consume();
         }
         if (position < tokens.size()) consume();
         if (checkKeyword("AS")) {
             consume();
-            while (position < tokens.size() && !checkTokenType(TokenType.PUNTO_Y_COMA) && !checkTokenType(TokenType.EOF)) {
+            while (position < tokens.size() && !checkTokenType(TokenType.PUNTO_Y_COMA) && !checkTokenType(TokenType.SEMICOLON) && !checkTokenType(TokenType.EOF) && !checkTokenType(TokenType.EOF_OLD)) {
                 consume();
             }
         }
@@ -430,7 +448,7 @@ public class CqlParser {
         if (checkKeyword("TABLE")) {
             consume();
             if (position < tokens.size()) consume();
-            while (position < tokens.size() && !checkTokenType(TokenType.PUNTO_Y_COMA) && !checkTokenType(TokenType.EOF)) {
+            while (position < tokens.size() && !checkTokenType(TokenType.PUNTO_Y_COMA) && !checkTokenType(TokenType.SEMICOLON) && !checkTokenType(TokenType.EOF) && !checkTokenType(TokenType.EOF_OLD)) {
                 consume();
             }
         }
@@ -446,7 +464,7 @@ public class CqlParser {
             consume();
             consume();
         }
-        if (position < tokens.size() && !checkTokenType(TokenType.PUNTO_Y_COMA)) {
+        if (position < tokens.size() && !checkTokenType(TokenType.PUNTO_Y_COMA) && !checkTokenType(TokenType.SEMICOLON)) {
             consume();
         }
         return new DropTableStatement();
@@ -477,36 +495,19 @@ public class CqlParser {
     private boolean checkKeyword(String keyword) {
         if (position >= tokens.size()) return false;
         Token t = tokens.get(position);
-        return (t.getType() == TokenType.PALABRA_RESERVADA || t.getType() == TokenType.KEYWORD || t.getType() == TokenType.IDENTIFICADOR)
+        return (t.getType() == TokenType.PALABRA_RESERVADA || t.getType() == TokenType.KEYWORD || t.getType() == TokenType.IDENTIFICADOR || t.getType() == TokenType.IDENTIFIER)
             && t.getLexeme().equalsIgnoreCase(keyword);
     }
 
     private boolean peekKeyword(String keyword) {
         int next = position;
-        while (next < tokens.size() && tokens.get(next).getType() == TokenType.COMENTARIO_LINEA || tokens.get(next).getType() == TokenType.COMENTARIO_BLOQUE) {
+        while (next < tokens.size() && (tokens.get(next).getType() == TokenType.COMENTARIO_LINEA || tokens.get(next).getType() == TokenType.COMENTARIO_BLOQUE)) {
             next++;
         }
         if (next >= tokens.size()) return false;
         Token t = tokens.get(next);
-        return (t.getType() == TokenType.PALABRA_RESERVADA || t.getType() == TokenType.KEYWORD || t.getType() == TokenType.IDENTIFICADOR)
+        return (t.getType() == TokenType.PALABRA_RESERVADA || t.getType() == TokenType.KEYWORD || t.getType() == TokenType.IDENTIFICADOR || t.getType() == TokenType.IDENTIFIER)
             && t.getLexeme().equalsIgnoreCase(keyword);
-    }
-
-    private boolean peekNextKeyword(String keyword) {
-        int next = position;
-        int found = 0;
-        while (next < tokens.size() && found < 2) {
-            Token t = tokens.get(next);
-            if (t.getType() != TokenType.COMENTARIO_LINEA && t.getType() != TokenType.COMENTARIO_BLOQUE) {
-                found++;
-                if (found == 2) {
-                    return (t.getType() == TokenType.PALABRA_RESERVADA || t.getType() == TokenType.KEYWORD || t.getType() == TokenType.IDENTIFICADOR)
-                        && t.getLexeme().equalsIgnoreCase(keyword);
-                }
-            }
-            next++;
-        }
-        return false;
     }
 
     private void skipComments() {
@@ -524,8 +525,8 @@ public class CqlParser {
         errorCollector.addError(new CompilerError(
             "SYNTAX",
             message,
-            token != null ? token.getLine() : 0,
-            token != null ? token.getColumn() : 0
+            token != null ? token.getLinea() : 0,
+            token != null ? token.getColumna() : 0
         ));
     }
 }

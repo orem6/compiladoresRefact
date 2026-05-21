@@ -87,7 +87,7 @@ public class MongoParser {
 
         if (expect(MongoTokenType.RBRACE)) {
             consume();
-            return new MongoParseError("E002", "Stage vacio");
+            return new MongoParseError("E002", "Stage vacio", current().getPosition());
         }
 
         if (!expect(MongoTokenType.STRING)) {
