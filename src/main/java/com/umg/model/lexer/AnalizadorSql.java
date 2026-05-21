@@ -89,17 +89,20 @@ public class AnalizadorSql {
         boolean hasMySql = false;
         boolean hasPostgreSql = false;
         boolean hasSqlServer = false;
+        boolean hasCassandra = false;
 
         for (Token token : tokens) {
             if (token.getDialecto() == SqlDialect.MYSQL) hasMySql = true;
             if (token.getDialecto() == SqlDialect.POSTGRESQL) hasPostgreSql = true;
             if (token.getDialecto() == SqlDialect.SQL_SERVER) hasSqlServer = true;
+            if (token.getDialecto() == SqlDialect.CASSANDRA) hasCassandra = true;
 
             if (token.getType() == TokenType.FUNCION && token.getDialecto() != null) {
                 switch (token.getDialecto()) {
                     case MYSQL -> hasMySql = true;
                     case POSTGRESQL -> hasPostgreSql = true;
                     case SQL_SERVER -> hasSqlServer = true;
+                    case CASSANDRA -> hasCassandra = true;
                 }
             }
         }
@@ -107,6 +110,7 @@ public class AnalizadorSql {
         if (hasMySql) compatibles.add(SqlDialect.MYSQL);
         if (hasPostgreSql) compatibles.add(SqlDialect.POSTGRESQL);
         if (hasSqlServer) compatibles.add(SqlDialect.SQL_SERVER);
+        if (hasCassandra) compatibles.add(SqlDialect.CASSANDRA);
 
         return compatibles;
     }

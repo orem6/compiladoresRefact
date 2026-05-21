@@ -46,12 +46,19 @@ public class ConexionBaseDatosConfig {
         if (esquema != null && !esquema.isEmpty()) return esquema;
         if (dialecto == SqlDialect.POSTGRESQL) return "public";
         if (dialecto == SqlDialect.SQL_SERVER) return "dbo";
+        if (dialecto == SqlDialect.CASSANDRA) return baseDatos;
         return baseDatos;
     }
 
     public boolean esValida() {
         if (dialecto == null) return false;
         if (usarUrlJdbcDirecta) return urlJdbc != null && !urlJdbc.isEmpty();
+        if (dialecto == SqlDialect.MONGODB) {
+            return host != null && !host.isEmpty() && puerto > 0;
+        }
+        if (dialecto == SqlDialect.CASSANDRA) {
+            return host != null && !host.isEmpty() && puerto > 0;
+        }
         return host != null && !host.isEmpty() && puerto > 0
             && baseDatos != null && !baseDatos.isEmpty()
             && usuario != null;
@@ -61,6 +68,7 @@ public class ConexionBaseDatosConfig {
         if (esquema != null && !esquema.isEmpty()) return esquema;
         if (dialecto == SqlDialect.POSTGRESQL) return "public";
         if (dialecto == SqlDialect.SQL_SERVER) return "dbo";
+        if (dialecto == SqlDialect.CASSANDRA) return baseDatos;
         return baseDatos;
     }
 }
