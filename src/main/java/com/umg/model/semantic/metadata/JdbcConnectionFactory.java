@@ -2,11 +2,13 @@ package com.umg.model.semantic.metadata;
 
 import com.umg.model.dialect.SqlDialect;
 import com.umg.model.semantic.config.ConexionBaseDatosConfig;
+import org.springframework.stereotype.Component;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
+@Component
 public class JdbcConnectionFactory {
 
     public Connection crearConexion(ConexionBaseDatosConfig config) throws SQLException {

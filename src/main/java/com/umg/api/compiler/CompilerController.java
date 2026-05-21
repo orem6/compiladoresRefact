@@ -31,9 +31,11 @@ import java.util.Map;
 public class CompilerController {
 
     private final LexicalSyntaxAnalysisService analysisService;
+    private final JdbcConnectionFactory connectionFactory;
 
-    public CompilerController(LexicalSyntaxAnalysisService analysisService) {
+    public CompilerController(LexicalSyntaxAnalysisService analysisService, JdbcConnectionFactory connectionFactory) {
         this.analysisService = analysisService;
+        this.connectionFactory = connectionFactory;
     }
 
     @Operation(
@@ -293,8 +295,7 @@ public class CompilerController {
             return ResponseEntity.badRequest().body(result);
         }
 
-        JdbcConnectionFactory factory = new JdbcConnectionFactory();
-        try (Connection conexion = factory.crearConexion(config)) {
+        try (Connection conexion = connectionFactory.crearConexion(config)) {
             boolean isValid = conexion.isValid(10);
             result.put("valid", isValid);
             result.put("message", isValid ? "Conexion exitosa a la base de datos." : "La conexion no respondio correctamente.");

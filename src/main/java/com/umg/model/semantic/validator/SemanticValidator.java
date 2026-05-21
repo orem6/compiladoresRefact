@@ -81,12 +81,6 @@ public class SemanticValidator {
             }
         }
 
-        for (ReferenciaTabla rt : refs.getTablas()) {
-            if (rt.getAlias() != null) {
-                tablasValidas.add(rt.getAlias().toUpperCase());
-            }
-        }
-
         for (ReferenciaColumna rc : refs.getColumnas()) {
             String colName = normalizer.normalizar(rc.getNombre(), dialecto);
             String tablaOAlias = rc.getTablaOAlias() != null
