@@ -18,10 +18,16 @@ public class CqlConnectionFactory {
         String host = config.getHost() != null ? config.getHost() : "localhost";
         int port = config.getPuerto() > 0 ? config.getPuerto() : 9042;
         String keyspace = config.getBaseDatos();
+        String localDatacenter = config.getLocalDatacenter() != null && !config.getLocalDatacenter().isBlank()
+            ? config.getLocalDatacenter() : "datacenter1";
 
         CqlSessionBuilder builder = CqlSession.builder()
             .addContactPoint(new InetSocketAddress(host, port))
-            .withLocalDatacenter("datacenter1");
+            .withLocalDatacenter(localDatacenter);
+
+        if (config.getUsuario() != null && !config.getUsuario().isBlank()) {
+            builder.withAuthCredentials(config.getUsuario(), config.getPassword() != null ? config.getPassword() : "");
+        }
 
         if (keyspace != null && !keyspace.isEmpty()) {
             builder.withKeyspace(keyspace);

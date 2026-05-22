@@ -1,6 +1,8 @@
 package com.umg.api.compiler.mapper;
 
 import com.umg.api.compiler.dto.*;
+import com.umg.model.dialect.CompilerDialect;
+import com.umg.model.dialect.DialectMapper;
 import com.umg.model.lexer.ErrorLexico;
 import com.umg.model.lexer.Token;
 import com.umg.model.lexer.TokenType;
@@ -19,7 +21,7 @@ public class CompilerResponseMapper {
     public ConexionBaseDatosConfig toConexionConfig(ConnectionConfigDto dto) {
         if (dto == null) return null;
         ConexionBaseDatosConfig config = new ConexionBaseDatosConfig();
-        config.setDialecto(dto.getDialect());
+        config.setDialecto(DialectMapper.toSqlDialect(dto.getDialect()));
         config.setHost(dto.getHost());
         config.setPuerto(dto.getPort() != null ? dto.getPort() : 0);
         config.setBaseDatos(dto.getDatabase());
@@ -28,6 +30,15 @@ public class CompilerResponseMapper {
         config.setPassword(dto.getPassword());
         config.setUrlJdbc(dto.getJdbcUrl());
         config.setUsarUrlJdbcDirecta(dto.getUseDirectJdbcUrl() != null ? dto.getUseDirectJdbcUrl() : false);
+        config.setLocalDatacenter(dto.getLocalDatacenter());
+        return config;
+    }
+
+    public ConexionBaseDatosConfig toConexionConfig(ConnectionConfigDto dto, CompilerDialect fallbackDialect) {
+        ConexionBaseDatosConfig config = toConexionConfig(dto);
+        if (config != null && config.getDialecto() == null) {
+            config.setDialecto(DialectMapper.toSqlDialect(fallbackDialect));
+        }
         return config;
     }
 
@@ -88,6 +99,7 @@ public class CompilerResponseMapper {
         dto.setMessage(resultado.getMensaje());
         dto.setErrors(toCompilerErrorDtoListFromSemantic(resultado.getErroresSemanticos()));
         dto.setWarnings(resultado.getAdvertencias());
+        dto.setValidatedObjects(resultado.getObjetosValidados());
         return dto;
     }
 

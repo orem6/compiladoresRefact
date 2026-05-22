@@ -26,9 +26,12 @@ Motores de base de datos soportados.
     "MYSQL",
     "POSTGRESQL",
     "SQL_SERVER",
-    "CASSANDRA",
-    "MONGODB"
-  ]
+    "MONGODB",
+    "CASSANDRA_CQL"
+  ],
+  "sqlDialects": ["MYSQL", "POSTGRESQL", "SQL_SERVER"],
+  "noSqlDialects": ["MONGODB", "CASSANDRA_CQL"],
+  "futureDialects": []
 }
 ```
 
@@ -39,7 +42,7 @@ Motores de base de datos soportados.
 Analisis lexico y sintactico de una sentencia SQL, CQL o MongoDB. Soporta los modos `LEXICAL_ONLY` y `LEXICAL_SYNTAX`.
 
 - **SQL** (`MYSQL`, `POSTGRESQL`, `SQL_SERVER`): Lexer SQL + Parser SQL
-- **CQL** (`CASSANDRA`): Lexer SQL + CqlParser (sintaxis Cassandra)
+- **CQL** (`CASSANDRA_CQL`): Lexer SQL + CqlParser (sintaxis Cassandra)
 - **MongoDB** (`MONGODB`): MongoLexer (JSON) + MongoParser (aggregation pipeline)
 
 ### Campos del Request
@@ -47,7 +50,7 @@ Analisis lexico y sintactico de una sentencia SQL, CQL o MongoDB. Soporta los mo
 | Campo | Tipo | Requerido | Descripcion |
 |-------|------|-----------|-------------|
 | requestId | String | No | Identificador unico opcional |
-| dialect | SqlDialect | Si | MYSQL, POSTGRESQL, SQL_SERVER, CASSANDRA o MONGODB |
+| dialect | CompilerDialect | Si | MYSQL, POSTGRESQL, SQL_SERVER, MONGODB, CASSANDRA_CQL |
 | sql | String | Si | Sentencia a analizar (SQL, CQL o JSON pipeline MongoDB) |
 | analysisMode | AnalysisMode | Si | LEXICAL_ONLY o LEXICAL_SYNTAX |
 | options | CompilerOptionsRequest | No | Opciones de configuracion |
@@ -73,7 +76,7 @@ Analisis lexico y sintactico de una sentencia SQL, CQL o MongoDB. Soporta los mo
 **Request CQL (Cassandra):**
 ```json
 {
-  "dialect": "CASSANDRA",
+  "dialect": "CASSANDRA_CQL",
   "sql": "SELECT id, nombre FROM usuarios WHERE edad > 18 ALLOW FILTERING;",
   "analysisMode": "LEXICAL_SYNTAX"
 }

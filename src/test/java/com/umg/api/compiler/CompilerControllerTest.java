@@ -41,8 +41,9 @@ class CompilerControllerTest {
     void testDialectsEndpoint() throws Exception {
         mockMvc.perform(get("/api/compiler/dialects"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.supportedDialects", hasItems("MYSQL", "POSTGRESQL", "SQL_SERVER")))
-                .andExpect(jsonPath("$.futureDialects", hasItems("MONGODB")));
+                .andExpect(jsonPath("$.supportedDialects", hasItems("MYSQL", "POSTGRESQL", "SQL_SERVER", "MONGODB", "CASSANDRA_CQL")))
+                .andExpect(jsonPath("$.noSqlDialects", hasItems("MONGODB", "CASSANDRA_CQL")))
+                .andExpect(jsonPath("$.futureDialects", hasSize(0)));
     }
 
     @Test
@@ -78,7 +79,7 @@ class CompilerControllerTest {
     }
 
     @Test
-    void testLexicalSyntaxModeAutoConverted() throws Exception {
+    void testLexicalSyntaxRejectsFullMode() throws Exception {
         CompilerAnalyzeRequest request = new CompilerAnalyzeRequest();
         request.setDialect(CompilerDialect.MYSQL);
         request.setSql("SELECT id FROM clientes;");
@@ -87,8 +88,8 @@ class CompilerControllerTest {
         mockMvc.perform(post("/api/compiler/analyze/lexical-syntax")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.analysisMode").value("LEXICAL_SYNTAX"));
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.executionStatus").value("INVALID_REQUEST"));
     }
 
     @Test
@@ -209,7 +210,7 @@ class CompilerControllerTest {
     }
 
     @Test
-    void testFullEndpointWithLexicalModeOverride() throws Exception {
+    void testFullEndpointRejectsNonFullMode() throws Exception {
         CompilerAnalyzeRequest request = new CompilerAnalyzeRequest();
         request.setDialect(CompilerDialect.MYSQL);
         request.setSql("SELECT id FROM usuarios;");
@@ -218,8 +219,8 @@ class CompilerControllerTest {
         mockMvc.perform(post("/api/compiler/analyze/full")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.analysisMode").value("FULL"));
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.executionStatus").value("INVALID_REQUEST"));
     }
 
     @Test
@@ -247,7 +248,7 @@ class CompilerControllerTest {
     }
 
     @Test
-    void testSemanticOnlyModeAutoConverted() throws Exception {
+    void testLexicalSyntaxRejectsSemanticOnlyMode() throws Exception {
         CompilerAnalyzeRequest request = new CompilerAnalyzeRequest();
         request.setDialect(CompilerDialect.MYSQL);
         request.setSql("SELECT id FROM usuarios;");
@@ -256,7 +257,7 @@ class CompilerControllerTest {
         mockMvc.perform(post("/api/compiler/analyze/lexical-syntax")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.analysisMode").value("LEXICAL_SYNTAX"));
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.executionStatus").value("INVALID_REQUEST"));
     }
 }
