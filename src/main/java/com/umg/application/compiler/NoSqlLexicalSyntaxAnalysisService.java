@@ -18,12 +18,26 @@ import java.util.List;
 @Service
 public class NoSqlLexicalSyntaxAnalysisService {
 
+    private final CompilerConsoleBuilder console;
+
+    public NoSqlLexicalSyntaxAnalysisService(CompilerConsoleBuilder console) {
+        this.console = console;
+    }
+
     public CompilerAnalyzeResponse analyze(CompilerAnalyzeRequest request) {
+        console.reset();
+
         CompilerDialect dialect = request.getDialect();
         String sql = request.getSql().trim();
         AnalysisMode mode = request.getAnalysisMode();
 
+        console.info("Iniciando analisis.");
+        console.info("Dialecto seleccionado: " + dialect.name());
+        console.info("Modo de analisis: " + mode.name());
+
         if (sql.isBlank()) {
+            console.error("SQL/NoSQL vacio o solo espacios en blanco.");
+            console.failed("Solicitud invalida.");
             return buildError(request, ExecutionStatus.INVALID_REQUEST, "SQL/NoSQL vacio.");
         }
 
@@ -31,6 +45,7 @@ public class NoSqlLexicalSyntaxAnalysisService {
         NoSqlAnalysisResult parseResult;
 
         if (dialect == CompilerDialect.MONGODB) {
+            console.info("Ejecutando analisis lexico/sintactico MongoDB.");
             MongoLexer lexer = new MongoLexer(sql);
             tokens = lexer.tokenize();
             List<NoSqlSyntaxError> lexErrors = lexer.getErrors();
@@ -42,6 +57,7 @@ public class NoSqlLexicalSyntaxAnalysisService {
                 parseResult.addSyntaxError(err);
             }
         } else if (dialect == CompilerDialect.CASSANDRA_CQL) {
+            console.info("Ejecutando analisis lexico/sintactico Cassandra CQL.");
             com.umg.model.nosql.cassandra.CqlLexer cqlLexer = new com.umg.model.nosql.cassandra.CqlLexer(sql);
             tokens = cqlLexer.tokenize();
             List<NoSqlSyntaxError> lexErrors = cqlLexer.getErrors();
@@ -53,6 +69,8 @@ public class NoSqlLexicalSyntaxAnalysisService {
                 parseResult.addSyntaxError(err);
             }
         } else {
+            console.error("Dialecto NoSQL no soportado: " + dialect);
+            console.failed("Solicitud invalida.");
             return buildError(request, ExecutionStatus.UNSUPPORTED_DIALECT, "Dialecto NoSQL no soportado: " + dialect);
         }
 
@@ -116,12 +134,20 @@ public class NoSqlLexicalSyntaxAnalysisService {
         if (hasLexicalErrors) {
             response.setExecutionStatus(ExecutionStatus.LEXICAL_ERROR);
             response.setMessage("La instruccion contiene errores lexicos.");
+            console.error("Analisis lexico finalizado con errores.");
+            console.failed("Se detectaron errores lexicos.");
         } else if (hasSyntaxErrors) {
             response.setExecutionStatus(ExecutionStatus.SYNTAX_ERROR);
             response.setMessage("La instruccion contiene errores sintacticos.");
+            console.info("Analisis lexico finalizado sin errores.");
+            console.error("Analisis sintactico finalizado con errores.");
+            console.failed("Se detectaron errores sintacticos.");
         } else {
             response.setExecutionStatus(ExecutionStatus.SUCCESS);
             response.setMessage("La instruccion es valida a nivel lexico y sintactico.");
+            console.info("Analisis lexico finalizado sin errores.");
+            console.info("Analisis sintactico finalizado sin errores.");
+            console.success("Sentencia valida a nivel lexico y sintactico.");
         }
 
         CompilerSummaryDto summary = new CompilerSummaryDto();
@@ -138,7 +164,7 @@ public class NoSqlLexicalSyntaxAnalysisService {
         response.setSyntaxResult(syntaxResult);
         response.setSemanticResult(null);
         response.setErrors(allErrors.isEmpty() ? null : allErrors);
-        response.setConsole(new ArrayList<>());
+        response.setConsole(console.build());
         return response;
     }
 
@@ -155,7 +181,7 @@ public class NoSqlLexicalSyntaxAnalysisService {
         resp.setSyntaxResult(null);
         resp.setSemanticResult(null);
         resp.setErrors(null);
-        resp.setConsole(new ArrayList<>());
+        resp.setConsole(console.build());
         return resp;
     }
 }
