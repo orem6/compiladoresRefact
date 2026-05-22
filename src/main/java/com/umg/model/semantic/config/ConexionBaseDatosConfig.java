@@ -12,6 +12,7 @@ public class ConexionBaseDatosConfig {
     private String password;
     private String urlJdbc;
     private boolean usarUrlJdbcDirecta;
+    private String localDatacenter;
 
     public ConexionBaseDatosConfig() {}
 
@@ -41,6 +42,9 @@ public class ConexionBaseDatosConfig {
 
     public boolean isUsarUrlJdbcDirecta() { return usarUrlJdbcDirecta; }
     public void setUsarUrlJdbcDirecta(boolean usarUrlJdbcDirecta) { this.usarUrlJdbcDirecta = usarUrlJdbcDirecta; }
+
+    public String getLocalDatacenter() { return localDatacenter; }
+    public void setLocalDatacenter(String localDatacenter) { this.localDatacenter = localDatacenter; }
 
     public String getEsquemaPorDefecto() {
         if (esquema != null && !esquema.isEmpty()) return esquema;

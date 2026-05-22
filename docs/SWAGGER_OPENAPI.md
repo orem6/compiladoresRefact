@@ -68,3 +68,10 @@ Esto significa que:
 ## Nota importante
 
 La documentacion Swagger/OpenAPI es solo documentacion. No modifica ni afecta la logica del compilador (lexer, parser, semantico). Ninguna anotacion Swagger cambia el comportamiento de los endpoints.
+# Actualizacion NoSQL (Prompt 07)
+
+- Dialectos oficiales documentados: `MYSQL`, `POSTGRESQL`, `SQL_SERVER`, `MONGODB`, `CASSANDRA_CQL`.
+- `ConnectionConfigDto.dialect` usa `CompilerDialect`.
+- `CompilerAnalyzeRequest` incluye `targetCollection` para pipeline MongoDB puro.
+- `/api/compiler/analyze/full` exige `analysisMode=FULL`.
+- `/api/compiler/analyze/lexical-syntax` rechaza `FULL` y `SEMANTIC_ONLY`.

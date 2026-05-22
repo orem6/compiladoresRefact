@@ -43,6 +43,9 @@ public class CompilerAnalyzeRequest {
     @Schema(description = "Datos de conexion requeridos solo para analisis semantico o full.")
     private ConnectionConfigDto connectionConfig;
 
+    @Schema(description = "Coleccion objetivo para MongoDB cuando sql es pipeline puro.", example = "orders")
+    private String targetCollection;
+
     public CompilerAnalyzeRequest() {
     }
 
@@ -58,4 +61,6 @@ public class CompilerAnalyzeRequest {
     public void setOptions(CompilerOptionsRequest options) { this.options = options; }
     public ConnectionConfigDto getConnectionConfig() { return connectionConfig; }
     public void setConnectionConfig(ConnectionConfigDto connectionConfig) { this.connectionConfig = connectionConfig; }
+    public String getTargetCollection() { return targetCollection; }
+    public void setTargetCollection(String targetCollection) { this.targetCollection = targetCollection; }
 }

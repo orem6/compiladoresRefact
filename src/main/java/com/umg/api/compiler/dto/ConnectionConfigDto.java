@@ -1,14 +1,18 @@
 package com.umg.api.compiler.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.umg.model.dialect.SqlDialect;
+import com.umg.model.dialect.CompilerDialect;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "Configuracion de conexion dinamica a base de datos.")
 public class ConnectionConfigDto {
 
-    @Schema(description = "Motor SQL de la conexion.", example = "MYSQL")
-    private SqlDialect dialect;
+    @Schema(
+        description = "Dialecto de la conexion (SQL o NoSQL).",
+        example = "MONGODB",
+        allowableValues = {"MYSQL", "POSTGRESQL", "SQL_SERVER", "MONGODB", "CASSANDRA_CQL"}
+    )
+    private CompilerDialect dialect;
 
     @Schema(description = "Host o IP del servidor de base de datos.", example = "localhost")
     private String host;
@@ -39,14 +43,17 @@ public class ConnectionConfigDto {
     @Schema(description = "Indica si se debe usar jdbcUrl directa en lugar de campos individuales.", example = "false")
     private Boolean useDirectJdbcUrl;
 
+    @Schema(description = "Datacenter local para Cassandra CQL.", example = "datacenter1")
+    private String localDatacenter;
+
     public ConnectionConfigDto() {
     }
 
-    public SqlDialect getDialect() {
+    public CompilerDialect getDialect() {
         return dialect;
     }
 
-    public void setDialect(SqlDialect dialect) {
+    public void setDialect(CompilerDialect dialect) {
         this.dialect = dialect;
     }
 
@@ -112,5 +119,13 @@ public class ConnectionConfigDto {
 
     public void setUseDirectJdbcUrl(Boolean useDirectJdbcUrl) {
         this.useDirectJdbcUrl = useDirectJdbcUrl;
+    }
+
+    public String getLocalDatacenter() {
+        return localDatacenter;
+    }
+
+    public void setLocalDatacenter(String localDatacenter) {
+        this.localDatacenter = localDatacenter;
     }
 }

@@ -1,6 +1,7 @@
 package com.umg.api.compiler.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Map;
 import java.util.List;
 
 @Schema(description = "Resultado del analisis semantico.")
@@ -17,6 +18,9 @@ public class SemanticResultDto {
 
     @Schema(description = "Advertencias semanticas.")
     private List<String> warnings;
+
+    @Schema(description = "Objetos validados durante el analisis semantico.")
+    private Map<String, Object> validatedObjects;
 
     public SemanticResultDto() {
     }
@@ -51,5 +55,13 @@ public class SemanticResultDto {
 
     public void setWarnings(List<String> warnings) {
         this.warnings = warnings;
+    }
+
+    public Map<String, Object> getValidatedObjects() {
+        return validatedObjects;
+    }
+
+    public void setValidatedObjects(Map<String, Object> validatedObjects) {
+        this.validatedObjects = validatedObjects;
     }
 }
