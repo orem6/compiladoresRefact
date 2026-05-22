@@ -1,10 +1,9 @@
 package com.umg.api.compiler;
 
 import com.umg.api.compiler.dto.*;
+import com.umg.application.compiler.CompilerFacadeService;
 import com.umg.application.compiler.ConnectionValidationService;
 import com.umg.application.compiler.DialectAnalysisRouter;
-import com.umg.model.dialect.SqlDialect;
-import com.umg.model.semantic.config.ConexionBaseDatosConfig;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -30,11 +29,14 @@ public class CompilerController {
 
     private final DialectAnalysisRouter analysisRouter;
     private final ConnectionValidationService connectionValidationService;
+    private final CompilerFacadeService compilerFacadeService;
 
     public CompilerController(DialectAnalysisRouter analysisRouter,
-                               ConnectionValidationService connectionValidationService) {
+                              ConnectionValidationService connectionValidationService,
+                              CompilerFacadeService compilerFacadeService) {
         this.analysisRouter = analysisRouter;
         this.connectionValidationService = connectionValidationService;
+        this.compilerFacadeService = compilerFacadeService;
     }
 
     @Operation(
@@ -69,8 +71,10 @@ public class CompilerController {
     @GetMapping("/dialects")
     public ResponseEntity<Map<String, Object>> dialects() {
         return ResponseEntity.ok(Map.of(
-            "supportedDialects", List.of("MYSQL", "POSTGRESQL", "SQL_SERVER"),
-            "futureDialects", List.of("MONGODB", "CASSANDRA")
+            "supportedDialects", List.of("MYSQL", "POSTGRESQL", "SQL_SERVER", "MONGODB", "CASSANDRA_CQL"),
+            "sqlDialects", List.of("MYSQL", "POSTGRESQL", "SQL_SERVER"),
+            "noSqlDialects", List.of("MONGODB", "CASSANDRA_CQL"),
+            "futureDialects", List.of()
         ));
     }
 
@@ -132,7 +136,14 @@ public class CompilerController {
             CompilerAnalyzeRequest request) {
         if (request.getAnalysisMode() == AnalysisMode.SEMANTIC_ONLY
             || request.getAnalysisMode() == AnalysisMode.FULL) {
-            request.setAnalysisMode(AnalysisMode.LEXICAL_SYNTAX);
+            CompilerAnalyzeResponse resp = new CompilerAnalyzeResponse();
+            resp.setRequestId(request.getRequestId());
+            resp.setDialect(request.getDialect());
+            resp.setAnalysisMode(request.getAnalysisMode());
+            resp.setValid(false);
+            resp.setMessage("/analyze/lexical-syntax solo acepta LEXICAL_ONLY o LEXICAL_SYNTAX.");
+            resp.setExecutionStatus(ExecutionStatus.INVALID_REQUEST);
+            return ResponseEntity.badRequest().body(resp);
         }
         return ResponseEntity.ok(analysisRouter.route(request));
     }
@@ -203,22 +214,17 @@ public class CompilerController {
                 )
             )
             CompilerAnalyzeRequest request) {
-        if (request.getAnalysisMode() == AnalysisMode.LEXICAL_ONLY
-            || request.getAnalysisMode() == AnalysisMode.LEXICAL_SYNTAX) {
-            request.setAnalysisMode(AnalysisMode.FULL);
-        }
-        if (request.getDialect() == com.umg.model.dialect.CompilerDialect.MONGODB
-            || request.getDialect() == com.umg.model.dialect.CompilerDialect.CASSANDRA_CQL) {
+        if (request.getAnalysisMode() != AnalysisMode.FULL) {
             CompilerAnalyzeResponse resp = new CompilerAnalyzeResponse();
             resp.setRequestId(request.getRequestId());
             resp.setDialect(request.getDialect());
             resp.setAnalysisMode(request.getAnalysisMode());
             resp.setValid(false);
-            resp.setMessage("FULL mode no esta soportado para dialectos NoSQL.");
-            resp.setExecutionStatus(ExecutionStatus.UNSUPPORTED_DIALECT);
+            resp.setMessage("/analyze/full requiere analysisMode=FULL.");
+            resp.setExecutionStatus(ExecutionStatus.INVALID_REQUEST);
             return ResponseEntity.badRequest().body(resp);
         }
-        return ResponseEntity.ok(analysisRouter.route(request));
+        return ResponseEntity.ok(compilerFacadeService.analyzeFull(request));
     }
 
     @Operation(
@@ -258,32 +264,34 @@ public class CompilerController {
             return ResponseEntity.badRequest().body(result);
         }
 
-        SqlDialect dialectToUse = connectionConfig.getDialect();
+        com.umg.model.dialect.CompilerDialect dialectToUse = connectionConfig.getDialect();
         if (dialectToUse == null) {
             result.put("message", "Dialecto de base de datos no especificado.");
             result.put("status", "INVALID_CONFIG");
             return ResponseEntity.badRequest().body(result);
         }
 
-        ConexionBaseDatosConfig config = new ConexionBaseDatosConfig();
-        config.setDialecto(dialectToUse);
-        config.setHost(connectionConfig.getHost());
-        config.setPuerto(connectionConfig.getPort() != null ? connectionConfig.getPort() : 0);
-        config.setBaseDatos(connectionConfig.getDatabase());
-        config.setEsquema(connectionConfig.getSchema());
-        config.setUsuario(connectionConfig.getUsername());
-        config.setPassword(connectionConfig.getPassword());
-        config.setUrlJdbc(connectionConfig.getJdbcUrl());
-        config.setUsarUrlJdbcDirecta(connectionConfig.getUseDirectJdbcUrl() != null
-            ? connectionConfig.getUseDirectJdbcUrl() : false);
+        Integer port = connectionConfig.getPort();
+        if (port == null) {
+            if (dialectToUse == com.umg.model.dialect.CompilerDialect.MONGODB) port = 27017;
+            else if (dialectToUse == com.umg.model.dialect.CompilerDialect.CASSANDRA_CQL) port = 9042;
+            else if (dialectToUse == com.umg.model.dialect.CompilerDialect.POSTGRESQL) port = 5432;
+            else if (dialectToUse == com.umg.model.dialect.CompilerDialect.SQL_SERVER) port = 1433;
+            else port = 3306;
+            connectionConfig.setPort(port);
+        }
 
-        if (!config.esValida()) {
+        com.umg.api.compiler.mapper.CompilerResponseMapper mapper = new com.umg.api.compiler.mapper.CompilerResponseMapper();
+        com.umg.model.semantic.config.ConexionBaseDatosConfig config = mapper.toConexionConfig(connectionConfig, dialectToUse);
+
+        if (config == null || !config.esValida()) {
             result.put("message", "Configuracion de conexion invalida. Verifique los campos obligatorios.");
             result.put("status", "INVALID_CONFIG");
             return ResponseEntity.badRequest().body(result);
         }
 
         Map<String, Object> connectionResult = connectionValidationService.testConnection(dialectToUse, config);
+        connectionResult.put("valid", Boolean.TRUE.equals(connectionResult.get("connected")));
         return ResponseEntity.ok(connectionResult);
     }
 

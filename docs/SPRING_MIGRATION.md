@@ -97,3 +97,9 @@ Ver `docs/SWAGGER_OPENAPI.md` para mas detalles.
 - Package raiz: `com.umg`.
 - JDK 17, Maven, Spring Boot 3.2.5.
 - Dialectos soportados: MySQL, PostgreSQL, SQL Server.
+# Actualizacion NoSQL Semantico
+
+- Se agrego `CompilerFacadeService` para coordinar flujo FULL.
+- Se agrego `NoSqlSemanticAnalysisService` para MongoDB y Cassandra CQL.
+- Se mantiene exclusion de auto-configuracion para DataSource, Mongo y Cassandra.
+- `ConnectionValidationService` ahora valida conexion por `CompilerDialect` y no expone password.

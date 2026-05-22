@@ -7,6 +7,7 @@ import com.umg.model.lexer.Token;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class ResultadoSemantico {
     private boolean valido;
@@ -15,6 +16,7 @@ public class ResultadoSemantico {
     private List<ErrorSemantico> erroresSemanticos;
     private List<String> advertencias;
     private SqlDialect dialecto;
+    private Map<String, Object> objetosValidados;
 
     public ResultadoSemantico() {
         this.erroresSemanticos = new ArrayList<>();
@@ -44,6 +46,9 @@ public class ResultadoSemantico {
 
     public SqlDialect getDialecto() { return dialecto; }
     public void setDialecto(SqlDialect dialecto) { this.dialecto = dialecto; }
+
+    public Map<String, Object> getObjetosValidados() { return objetosValidados; }
+    public void setObjetosValidados(Map<String, Object> objetosValidados) { this.objetosValidados = objetosValidados; }
 
     public boolean tieneErroresSemanticos() { return !erroresSemanticos.isEmpty(); }
 
