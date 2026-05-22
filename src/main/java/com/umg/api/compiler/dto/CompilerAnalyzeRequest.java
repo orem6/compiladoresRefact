@@ -1,11 +1,11 @@
 package com.umg.api.compiler.dto;
 
-import com.umg.model.dialect.SqlDialect;
+import com.umg.model.dialect.CompilerDialect;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-@Schema(description = "Request principal para analisis SQL.")
+@Schema(description = "Request principal para analisis SQL o NoSQL.")
 public class CompilerAnalyzeRequest {
 
     @Schema(
@@ -16,15 +16,15 @@ public class CompilerAnalyzeRequest {
 
     @NotNull(message = "dialect es obligatorio")
     @Schema(
-        description = "Motor SQL seleccionado.",
-        example = "MYSQL",
-        allowableValues = {"MYSQL", "POSTGRESQL", "SQL_SERVER"}
+        description = "Dialecto general del compilador: SQL y NoSQL.",
+        example = "MONGODB",
+        allowableValues = {"MYSQL", "POSTGRESQL", "SQL_SERVER", "MONGODB", "CASSANDRA_CQL"}
     )
-    private SqlDialect dialect;
+    private CompilerDialect dialect;
 
     @NotBlank(message = "sql no puede estar vacio")
     @Schema(
-        description = "Sentencia SQL que sera analizada. El backend no ejecuta esta sentencia.",
+        description = "Sentencia SQL o instruccion NoSQL que sera analizada. El backend no ejecuta esta sentencia.",
         example = "SELECT id, nombre FROM clientes WHERE estado = 1;"
     )
     private String sql;
@@ -46,51 +46,16 @@ public class CompilerAnalyzeRequest {
     public CompilerAnalyzeRequest() {
     }
 
-    public String getRequestId() {
-        return requestId;
-    }
-
-    public void setRequestId(String requestId) {
-        this.requestId = requestId;
-    }
-
-    public SqlDialect getDialect() {
-        return dialect;
-    }
-
-    public void setDialect(SqlDialect dialect) {
-        this.dialect = dialect;
-    }
-
-    public String getSql() {
-        return sql;
-    }
-
-    public void setSql(String sql) {
-        this.sql = sql;
-    }
-
-    public AnalysisMode getAnalysisMode() {
-        return analysisMode;
-    }
-
-    public void setAnalysisMode(AnalysisMode analysisMode) {
-        this.analysisMode = analysisMode;
-    }
-
-    public CompilerOptionsRequest getOptions() {
-        return options;
-    }
-
-    public void setOptions(CompilerOptionsRequest options) {
-        this.options = options;
-    }
-
-    public ConnectionConfigDto getConnectionConfig() {
-        return connectionConfig;
-    }
-
-    public void setConnectionConfig(ConnectionConfigDto connectionConfig) {
-        this.connectionConfig = connectionConfig;
-    }
+    public String getRequestId() { return requestId; }
+    public void setRequestId(String requestId) { this.requestId = requestId; }
+    public CompilerDialect getDialect() { return dialect; }
+    public void setDialect(CompilerDialect dialect) { this.dialect = dialect; }
+    public String getSql() { return sql; }
+    public void setSql(String sql) { this.sql = sql; }
+    public AnalysisMode getAnalysisMode() { return analysisMode; }
+    public void setAnalysisMode(AnalysisMode analysisMode) { this.analysisMode = analysisMode; }
+    public CompilerOptionsRequest getOptions() { return options; }
+    public void setOptions(CompilerOptionsRequest options) { this.options = options; }
+    public ConnectionConfigDto getConnectionConfig() { return connectionConfig; }
+    public void setConnectionConfig(ConnectionConfigDto connectionConfig) { this.connectionConfig = connectionConfig; }
 }

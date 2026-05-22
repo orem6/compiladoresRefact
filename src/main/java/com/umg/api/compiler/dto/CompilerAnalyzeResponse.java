@@ -1,17 +1,21 @@
 package com.umg.api.compiler.dto;
 
-import com.umg.model.dialect.SqlDialect;
+import com.umg.model.dialect.CompilerDialect;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
-@Schema(description = "Respuesta unificada del compilador SQL.")
+@Schema(description = "Respuesta unificada del compilador SQL/NoSQL.")
 public class CompilerAnalyzeResponse {
 
     @Schema(description = "Identificador unico del request.", example = "REQ-001")
     private String requestId;
 
-    @Schema(description = "Motor SQL utilizado para el analisis.", example = "MYSQL")
-    private SqlDialect dialect;
+    @Schema(
+        description = "Dialecto general del compilador: SQL y NoSQL.",
+        example = "MONGODB",
+        allowableValues = {"MYSQL", "POSTGRESQL", "SQL_SERVER", "MONGODB", "CASSANDRA_CQL"}
+    )
+    private CompilerDialect dialect;
 
     @Schema(description = "Modo de analisis ejecutado.", example = "LEXICAL_SYNTAX")
     private AnalysisMode analysisMode;
@@ -57,11 +61,11 @@ public class CompilerAnalyzeResponse {
         this.requestId = requestId;
     }
 
-    public SqlDialect getDialect() {
+    public CompilerDialect getDialect() {
         return dialect;
     }
 
-    public void setDialect(SqlDialect dialect) {
+    public void setDialect(CompilerDialect dialect) {
         this.dialect = dialect;
     }
 

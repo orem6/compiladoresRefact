@@ -1,14 +1,10 @@
 package com.umg.api.compiler;
 
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoDatabase;
 import com.umg.api.compiler.dto.*;
-import com.umg.application.compiler.LexicalSyntaxAnalysisService;
+import com.umg.application.compiler.ConnectionValidationService;
+import com.umg.application.compiler.DialectAnalysisRouter;
 import com.umg.model.dialect.SqlDialect;
 import com.umg.model.semantic.config.ConexionBaseDatosConfig;
-import com.umg.model.semantic.metadata.CqlConnectionFactory;
-import com.umg.model.semantic.metadata.JdbcConnectionFactory;
-import com.umg.model.semantic.metadata.MongoConnectionFactory;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -20,8 +16,6 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,19 +28,13 @@ import java.util.Map;
 )
 public class CompilerController {
 
-    private final LexicalSyntaxAnalysisService analysisService;
-    private final JdbcConnectionFactory jdbcConnectionFactory;
-    private final CqlConnectionFactory cqlConnectionFactory;
-    private final MongoConnectionFactory mongoConnectionFactory;
+    private final DialectAnalysisRouter analysisRouter;
+    private final ConnectionValidationService connectionValidationService;
 
-    public CompilerController(LexicalSyntaxAnalysisService analysisService,
-                              JdbcConnectionFactory jdbcConnectionFactory,
-                              CqlConnectionFactory cqlConnectionFactory,
-                              MongoConnectionFactory mongoConnectionFactory) {
-        this.analysisService = analysisService;
-        this.jdbcConnectionFactory = jdbcConnectionFactory;
-        this.cqlConnectionFactory = cqlConnectionFactory;
-        this.mongoConnectionFactory = mongoConnectionFactory;
+    public CompilerController(DialectAnalysisRouter analysisRouter,
+                               ConnectionValidationService connectionValidationService) {
+        this.analysisRouter = analysisRouter;
+        this.connectionValidationService = connectionValidationService;
     }
 
     @Operation(
@@ -81,7 +69,8 @@ public class CompilerController {
     @GetMapping("/dialects")
     public ResponseEntity<Map<String, Object>> dialects() {
         return ResponseEntity.ok(Map.of(
-            "supportedDialects", List.of("MYSQL", "POSTGRESQL", "SQL_SERVER", "CASSANDRA", "MONGODB")
+            "supportedDialects", List.of("MYSQL", "POSTGRESQL", "SQL_SERVER"),
+            "futureDialects", List.of("MONGODB", "CASSANDRA")
         ));
     }
 
@@ -141,7 +130,11 @@ public class CompilerController {
                 )
             )
             CompilerAnalyzeRequest request) {
-        return ResponseEntity.ok(analysisService.analyze(request));
+        if (request.getAnalysisMode() == AnalysisMode.SEMANTIC_ONLY
+            || request.getAnalysisMode() == AnalysisMode.FULL) {
+            request.setAnalysisMode(AnalysisMode.LEXICAL_SYNTAX);
+        }
+        return ResponseEntity.ok(analysisRouter.route(request));
     }
 
     @Operation(
@@ -214,7 +207,18 @@ public class CompilerController {
             || request.getAnalysisMode() == AnalysisMode.LEXICAL_SYNTAX) {
             request.setAnalysisMode(AnalysisMode.FULL);
         }
-        return ResponseEntity.ok(analysisService.analyze(request));
+        if (request.getDialect() == com.umg.model.dialect.CompilerDialect.MONGODB
+            || request.getDialect() == com.umg.model.dialect.CompilerDialect.CASSANDRA_CQL) {
+            CompilerAnalyzeResponse resp = new CompilerAnalyzeResponse();
+            resp.setRequestId(request.getRequestId());
+            resp.setDialect(request.getDialect());
+            resp.setAnalysisMode(request.getAnalysisMode());
+            resp.setValid(false);
+            resp.setMessage("FULL mode no esta soportado para dialectos NoSQL.");
+            resp.setExecutionStatus(ExecutionStatus.UNSUPPORTED_DIALECT);
+            return ResponseEntity.badRequest().body(resp);
+        }
+        return ResponseEntity.ok(analysisRouter.route(request));
     }
 
     @Operation(
@@ -241,35 +245,9 @@ public class CompilerController {
             description = "Error interno no controlado"
         )
     })
-    @PostMapping("/connection/test")
-    public ResponseEntity<Map<String, Object>> testConnection(
-            @Valid @RequestBody
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                description = "Configuracion de conexion a base de datos",
-                required = true,
-                content = @Content(
-                    mediaType = "application/json",
-                    schema = @Schema(implementation = ConnectionConfigDto.class),
-                    examples = {
-                        @ExampleObject(
-                            name = "Conexion MySQL",
-                            summary = "Prueba de conexion a MySQL",
-                            value = """
-                                    {
-                                      "dialect": "MYSQL",
-                                      "host": "localhost",
-                                      "port": 3306,
-                                      "database": "mi_base",
-                                      "username": "root",
-                                      "password": "********",
-                                      "schema": "public"
-                                    }
-                                    """
-                        )
-                    }
-                )
-            )
-            ConnectionConfigDto connectionConfig) {
+    @PostMapping("/connection/validate")
+    public ResponseEntity<Map<String, Object>> validateConnection(
+            @Valid @RequestBody ConnectionConfigDto connectionConfig) {
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("valid", false);
@@ -305,72 +283,36 @@ public class CompilerController {
             return ResponseEntity.badRequest().body(result);
         }
 
-        if (dialectToUse == SqlDialect.CASSANDRA) {
-            return testCqlConnection(result, config, dialectToUse);
-        }
-
-        if (dialectToUse == SqlDialect.MONGODB) {
-            return testMongoConnection(result, config, dialectToUse);
-        }
-
-        try (Connection conexion = jdbcConnectionFactory.crearConexion(config)) {
-            boolean isValid = conexion.isValid(10);
-            result.put("valid", isValid);
-            result.put("message", isValid ? "Conexion exitosa a la base de datos." : "La conexion no respondio correctamente.");
-            result.put("status", isValid ? "SUCCESS" : "CONNECTION_FAILED");
-            result.put("dialect", dialectToUse.name());
-            result.put("database", config.getBaseDatos());
-            result.put("schema", config.getEsquemaParaBusqueda());
-            result.put("host", config.getHost());
-            result.put("port", config.getPuerto());
-        } catch (SQLException e) {
-            result.put("valid", false);
-            result.put("message", "Error de conexion: " + e.getMessage());
-            result.put("status", "CONNECTION_ERROR");
-            result.put("error", e.getMessage());
-        }
-
-        return ResponseEntity.ok(result);
+        Map<String, Object> connectionResult = connectionValidationService.testConnection(dialectToUse, config);
+        return ResponseEntity.ok(connectionResult);
     }
 
-    private ResponseEntity<Map<String, Object>> testCqlConnection(Map<String, Object> result, ConexionBaseDatosConfig config, SqlDialect dialect) {
-        try (com.datastax.oss.driver.api.core.CqlSession session = cqlConnectionFactory.crearConexion(config)) {
-            boolean isValid = session.isClosed() == false;
-            result.put("valid", isValid);
-            result.put("message", isValid ? "Conexion exitosa a Cassandra." : "La conexion no respondio correctamente.");
-            result.put("status", isValid ? "SUCCESS" : "CONNECTION_FAILED");
-            result.put("dialect", dialect.name());
-            result.put("database", config.getBaseDatos());
-            result.put("host", config.getHost());
-            result.put("port", config.getPuerto());
-        } catch (Exception e) {
-            result.put("valid", false);
-            result.put("message", "Error de conexion Cassandra: " + e.getMessage());
-            result.put("status", "CONNECTION_ERROR");
-            result.put("error", e.getMessage());
-        }
-        return ResponseEntity.ok(result);
-    }
+    @Operation(
+        summary = "[Deprecado] Validar conexion a base de datos",
+        description = """
+                Endpoint deprecado. Use /api/compiler/connection/validate en su lugar.
 
-    private ResponseEntity<Map<String, Object>> testMongoConnection(Map<String, Object> result, ConexionBaseDatosConfig config, SqlDialect dialect) {
-        try (MongoClient mongoClient = mongoConnectionFactory.crearConexion(config)) {
-            MongoDatabase db = mongoClient.getDatabase(
-                config.getBaseDatos() != null ? config.getBaseDatos() : "admin");
-            db.listCollectionNames().first();
-            boolean isValid = true;
-            result.put("valid", isValid);
-            result.put("message", isValid ? "Conexion exitosa a MongoDB." : "La conexion no respondio correctamente.");
-            result.put("status", isValid ? "SUCCESS" : "CONNECTION_FAILED");
-            result.put("dialect", dialect.name());
-            result.put("database", config.getBaseDatos());
-            result.put("host", config.getHost());
-            result.put("port", config.getPuerto());
-        } catch (Exception e) {
-            result.put("valid", false);
-            result.put("message", "Error de conexion MongoDB: " + e.getMessage());
-            result.put("status", "CONNECTION_ERROR");
-            result.put("error", e.getMessage());
-        }
-        return ResponseEntity.ok(result);
+                Valida si los datos de conexion enviados permiten conectarse al motor seleccionado.
+                """
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Validacion procesada correctamente. La conexion puede ser valida o invalida segun el campo valid."
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Request invalido"
+        ),
+        @ApiResponse(
+            responseCode = "500",
+            description = "Error interno no controlado"
+        )
+    })
+    @PostMapping("/connection/test")
+    @Deprecated
+    public ResponseEntity<Map<String, Object>> testConnection(
+            @Valid @RequestBody ConnectionConfigDto connectionConfig) {
+        return validateConnection(connectionConfig);
     }
 }

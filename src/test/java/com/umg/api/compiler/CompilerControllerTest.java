@@ -3,7 +3,7 @@ package com.umg.api.compiler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.umg.api.compiler.dto.AnalysisMode;
 import com.umg.api.compiler.dto.CompilerAnalyzeRequest;
-import com.umg.model.dialect.SqlDialect;
+import com.umg.model.dialect.CompilerDialect;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
@@ -48,7 +48,7 @@ class CompilerControllerTest {
     @Test
     void testLexicalSyntaxValidSelect() throws Exception {
         CompilerAnalyzeRequest request = new CompilerAnalyzeRequest();
-        request.setDialect(SqlDialect.MYSQL);
+        request.setDialect(CompilerDialect.MYSQL);
         request.setSql("SELECT id, nombre FROM clientes WHERE estado = 1;");
         request.setAnalysisMode(AnalysisMode.LEXICAL_SYNTAX);
 
@@ -67,7 +67,7 @@ class CompilerControllerTest {
     @Test
     void testLexicalSyntaxEmptySql() throws Exception {
         CompilerAnalyzeRequest request = new CompilerAnalyzeRequest();
-        request.setDialect(SqlDialect.MYSQL);
+        request.setDialect(CompilerDialect.MYSQL);
         request.setSql("");
         request.setAnalysisMode(AnalysisMode.LEXICAL_SYNTAX);
 
@@ -78,9 +78,9 @@ class CompilerControllerTest {
     }
 
     @Test
-    void testLexicalSyntaxModeNotAllowed() throws Exception {
+    void testLexicalSyntaxModeAutoConverted() throws Exception {
         CompilerAnalyzeRequest request = new CompilerAnalyzeRequest();
-        request.setDialect(SqlDialect.MYSQL);
+        request.setDialect(CompilerDialect.MYSQL);
         request.setSql("SELECT id FROM clientes;");
         request.setAnalysisMode(AnalysisMode.FULL);
 
@@ -88,15 +88,13 @@ class CompilerControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.valid").value(false))
-                .andExpect(jsonPath("$.executionStatus").value("INVALID_REQUEST"))
-                .andExpect(jsonPath("$.message", containsString("configuracion de base de datos")));
+                .andExpect(jsonPath("$.analysisMode").value("LEXICAL_SYNTAX"));
     }
 
     @Test
     void testLexicalSyntaxWithSyntaxError() throws Exception {
         CompilerAnalyzeRequest request = new CompilerAnalyzeRequest();
-        request.setDialect(SqlDialect.MYSQL);
+        request.setDialect(CompilerDialect.MYSQL);
         request.setSql("SELECT FROM WHERE;");
         request.setAnalysisMode(AnalysisMode.LEXICAL_SYNTAX);
 
@@ -113,7 +111,7 @@ class CompilerControllerTest {
     @Test
     void testLexicalOnlyMode() throws Exception {
         CompilerAnalyzeRequest request = new CompilerAnalyzeRequest();
-        request.setDialect(SqlDialect.MYSQL);
+        request.setDialect(CompilerDialect.MYSQL);
         request.setSql("SELECT id FROM clientes;");
         request.setAnalysisMode(AnalysisMode.LEXICAL_ONLY);
 
@@ -130,7 +128,7 @@ class CompilerControllerTest {
     @Test
     void testLexicalSyntaxWithComments() throws Exception {
         CompilerAnalyzeRequest request = new CompilerAnalyzeRequest();
-        request.setDialect(SqlDialect.MYSQL);
+        request.setDialect(CompilerDialect.MYSQL);
         request.setSql("SELECT id -- solo id\nFROM clientes;");
         request.setAnalysisMode(AnalysisMode.LEXICAL_SYNTAX);
 
@@ -147,7 +145,7 @@ class CompilerControllerTest {
     void testLexicalSyntaxResponseStructure() throws Exception {
         CompilerAnalyzeRequest request = new CompilerAnalyzeRequest();
         request.setRequestId("test-uuid-123");
-        request.setDialect(SqlDialect.POSTGRESQL);
+        request.setDialect(CompilerDialect.POSTGRESQL);
         request.setSql("SELECT * FROM usuarios;");
         request.setAnalysisMode(AnalysisMode.LEXICAL_SYNTAX);
 
@@ -173,7 +171,7 @@ class CompilerControllerTest {
     @Test
     void testDialectSqlServer() throws Exception {
         CompilerAnalyzeRequest request = new CompilerAnalyzeRequest();
-        request.setDialect(SqlDialect.SQL_SERVER);
+        request.setDialect(CompilerDialect.SQL_SERVER);
         request.setSql("SELECT GETDATE();");
         request.setAnalysisMode(AnalysisMode.LEXICAL_SYNTAX);
 
@@ -213,7 +211,7 @@ class CompilerControllerTest {
     @Test
     void testFullEndpointWithLexicalModeOverride() throws Exception {
         CompilerAnalyzeRequest request = new CompilerAnalyzeRequest();
-        request.setDialect(SqlDialect.MYSQL);
+        request.setDialect(CompilerDialect.MYSQL);
         request.setSql("SELECT id FROM usuarios;");
         request.setAnalysisMode(AnalysisMode.LEXICAL_ONLY);
 
@@ -249,9 +247,9 @@ class CompilerControllerTest {
     }
 
     @Test
-    void testSemanticOnlyModeRequiresConfig() throws Exception {
+    void testSemanticOnlyModeAutoConverted() throws Exception {
         CompilerAnalyzeRequest request = new CompilerAnalyzeRequest();
-        request.setDialect(SqlDialect.MYSQL);
+        request.setDialect(CompilerDialect.MYSQL);
         request.setSql("SELECT id FROM usuarios;");
         request.setAnalysisMode(AnalysisMode.SEMANTIC_ONLY);
 
@@ -259,8 +257,6 @@ class CompilerControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.valid").value(false))
-                .andExpect(jsonPath("$.executionStatus").value("INVALID_REQUEST"))
-                .andExpect(jsonPath("$.message", containsString("configuracion de base de datos")));
+                .andExpect(jsonPath("$.analysisMode").value("LEXICAL_SYNTAX"));
     }
 }

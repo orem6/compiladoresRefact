@@ -2,14 +2,12 @@ package com.umg.application.compiler;
 
 import com.umg.api.compiler.dto.*;
 import com.umg.api.compiler.mapper.CompilerResponseMapper;
+import com.umg.model.dialect.CompilerDialect;
 import com.umg.model.dialect.SqlDialect;
 import com.umg.model.error.CompilerError;
 import com.umg.model.error.ErrorCollector;
 import com.umg.model.lexer.*;
-import com.umg.model.mongo.MongoParseResult;
 import com.umg.model.parser.Parser;
-import com.umg.model.semantic.AnalizadorCql;
-import com.umg.model.semantic.AnalizadorMongo;
 import com.umg.model.semantic.AnalizadorSemanticoSql;
 import com.umg.model.semantic.config.ConexionBaseDatosConfig;
 import com.umg.model.semantic.result.ResultadoSemantico;
@@ -33,7 +31,8 @@ public class LexicalSyntaxAnalysisService {
     public CompilerAnalyzeResponse analyze(CompilerAnalyzeRequest request) {
         console.reset();
 
-        SqlDialect dialect = request.getDialect();
+        CompilerDialect compilerDialect = request.getDialect();
+        SqlDialect dialect = toSqlDialect(compilerDialect);
         String sql = request.getSql().trim();
         AnalysisMode mode = request.getAnalysisMode();
         CompilerOptionsRequest options = request.getOptions() != null ? request.getOptions() : new CompilerOptionsRequest();
@@ -51,19 +50,29 @@ public class LexicalSyntaxAnalysisService {
             return resp;
         }
 
-        if (dialect == SqlDialect.CASSANDRA) {
-            return analyzeCql(request, dialect, sql, mode, options);
-        }
-
-        if (dialect == SqlDialect.MONGODB) {
-            return analyzeMongo(request, dialect, sql, mode, options);
-        }
-
         if (mode == AnalysisMode.SEMANTIC_ONLY || mode == AnalysisMode.FULL) {
             return analyzeSemantic(request, dialect, sql, mode, options);
         }
 
         return analyzeLexicalSyntax(request, dialect, sql, mode, options);
+    }
+
+    private static SqlDialect toSqlDialect(CompilerDialect dialect) {
+        return switch (dialect) {
+            case MYSQL -> SqlDialect.MYSQL;
+            case POSTGRESQL -> SqlDialect.POSTGRESQL;
+            case SQL_SERVER -> SqlDialect.SQL_SERVER;
+            default -> throw new IllegalArgumentException("Dialecto no SQL: " + dialect);
+        };
+    }
+
+    private static CompilerDialect toCompilerDialect(SqlDialect dialect) {
+        return switch (dialect) {
+            case MYSQL -> CompilerDialect.MYSQL;
+            case POSTGRESQL -> CompilerDialect.POSTGRESQL;
+            case SQL_SERVER -> CompilerDialect.SQL_SERVER;
+            default -> throw new IllegalArgumentException("SqlDialect desconocido: " + dialect);
+        };
     }
 
     private CompilerAnalyzeResponse analyzeSemantic(CompilerAnalyzeRequest request, SqlDialect dialect,
@@ -198,7 +207,7 @@ public class LexicalSyntaxAnalysisService {
 
         CompilerAnalyzeResponse response = new CompilerAnalyzeResponse();
         response.setRequestId(request.getRequestId());
-        response.setDialect(dialect);
+        response.setDialect(toCompilerDialect(dialect));
         response.setAnalysisMode(mode);
         response.setValid(valid);
         response.setMessage(message);
@@ -309,7 +318,7 @@ public class LexicalSyntaxAnalysisService {
 
         CompilerAnalyzeResponse response = new CompilerAnalyzeResponse();
         response.setRequestId(request.getRequestId());
-        response.setDialect(dialect);
+        response.setDialect(toCompilerDialect(dialect));
         response.setAnalysisMode(mode);
         response.setValid(!hasLexicalErrors && (syntaxResult == null || syntaxResult.isValid()));
         if (hasLexicalErrors) {
@@ -342,270 +351,7 @@ public class LexicalSyntaxAnalysisService {
         return response;
     }
 
-    private CompilerAnalyzeResponse analyzeCql(CompilerAnalyzeRequest request, SqlDialect dialect,
-                                                String sql, AnalysisMode mode, CompilerOptionsRequest options) {
-        if (mode == AnalysisMode.SEMANTIC_ONLY || mode == AnalysisMode.FULL) {
-            return analyzeCqlSemantic(request, dialect, sql, mode, options);
-        }
-        return analyzeCqlLexicalSyntax(request, dialect, sql, mode, options);
-    }
 
-    private CompilerAnalyzeResponse analyzeCqlLexicalSyntax(CompilerAnalyzeRequest request, SqlDialect dialect,
-                                                             String sql, AnalysisMode mode, CompilerOptionsRequest options) {
-        AnalizadorCql analizador = new AnalizadorCql();
-        ResultadoSemantico resultado = analizador.analizarSoloLexico(sql);
-
-        boolean lexicoValido = resultado.getResultadoLexer() != null
-            && resultado.getResultadoLexer().isValido();
-
-        List<ErrorLexico> lexicalErrors = new ArrayList<>();
-        List<ErrorLexico> syntaxErrors = new ArrayList<>();
-        if (resultado.getResultadoLexer() != null) {
-            for (ErrorLexico err : resultado.getResultadoLexer().getErrores()) {
-                if (err.getCodigo().equals("E001") || err.getCodigo().equals("E000")) {
-                    lexicalErrors.add(err);
-                } else {
-                    syntaxErrors.add(err);
-                }
-            }
-        }
-
-        List<CompilerErrorDto> lexicalErrorDtos = mapper.toCompilerErrorDtoList(lexicalErrors, "LEXICAL", "ERROR");
-        List<CompilerErrorDto> syntaxErrorDtos = mapper.toCompilerErrorDtoList(syntaxErrors, "SYNTAX", "ERROR");
-
-        LexicalResultDto lexicalResult = new LexicalResultDto();
-        lexicalResult.setValid(lexicoValido);
-        lexicalResult.setMessage(lexicoValido ? "Analisis lexico CQL finalizado correctamente." : "Se detectaron errores lexicos.");
-        lexicalResult.setErrors(lexicalErrorDtos);
-
-        SyntaxResultDto syntaxResult = null;
-        List<CompilerErrorDto> allErrors = new ArrayList<>();
-        allErrors.addAll(lexicalErrorDtos);
-        allErrors.addAll(syntaxErrorDtos);
-
-        boolean hasLexicalErrors = !lexicalErrors.isEmpty();
-        boolean hasSyntaxErrors = !syntaxErrors.isEmpty();
-
-        if (mode == AnalysisMode.LEXICAL_SYNTAX) {
-            syntaxResult = new SyntaxResultDto();
-            syntaxResult.setValid(!hasSyntaxErrors);
-            syntaxResult.setMessage(hasSyntaxErrors ? "La estructura CQL no es valida." : "La estructura CQL es correcta.");
-            syntaxResult.setStatementType("CQL");
-            syntaxResult.setErrors(syntaxErrorDtos);
-        }
-
-        CompilerAnalyzeResponse response = new CompilerAnalyzeResponse();
-        response.setRequestId(request.getRequestId());
-        response.setDialect(dialect);
-        response.setAnalysisMode(mode);
-        response.setValid(!hasLexicalErrors && (syntaxResult == null || syntaxResult.isValid()));
-        if (hasLexicalErrors) {
-            response.setExecutionStatus(ExecutionStatus.LEXICAL_ERROR);
-            response.setMessage("La sentencia CQL contiene errores lexicos.");
-        } else if (hasSyntaxErrors) {
-            response.setExecutionStatus(ExecutionStatus.SYNTAX_ERROR);
-            response.setMessage("La sentencia CQL contiene errores sintacticos.");
-        } else {
-            response.setExecutionStatus(ExecutionStatus.SUCCESS);
-            response.setMessage("La sentencia CQL es valida a nivel lexico y sintactico.");
-        }
-
-        CompilerSummaryDto summary = new CompilerSummaryDto();
-        summary.setTokenCount(lexicalResult.getTokens() != null ? lexicalResult.getTokens().size() : 0);
-        summary.setLexicalErrorCount(lexicalErrorDtos.size());
-        summary.setSyntaxErrorCount(syntaxErrorDtos.size());
-        summary.setSemanticErrorCount(0);
-        summary.setWarningCount(0);
-        summary.setAnalyzedAt(LocalDateTime.now());
-
-        response.setSummary(summary);
-        response.setConnectionResult(null);
-        response.setLexicalResult(lexicalResult);
-        response.setSyntaxResult(syntaxResult);
-        response.setSemanticResult(null);
-        response.setErrors(allErrors.isEmpty() ? null : allErrors);
-        response.setConsole(console.build());
-
-        return response;
-    }
-
-    private CompilerAnalyzeResponse analyzeCqlSemantic(CompilerAnalyzeRequest request, SqlDialect dialect,
-                                                        String sql, AnalysisMode mode, CompilerOptionsRequest options) {
-        ConexionBaseDatosConfig dbConfig = mapper.toConexionConfig(request.getConnectionConfig());
-
-        if (dbConfig == null || !dbConfig.esValida()) {
-            CompilerAnalyzeResponse resp = buildErrorResponse(request, ExecutionStatus.INVALID_REQUEST);
-            resp.setMessage("Se requiere configuracion de conexion Cassandra para el modo " + mode.name() + ".");
-            console.error("Configuracion de conexion Cassandra no proporcionada o invalida.");
-            console.failed("Solicitud invalida.");
-            resp.setConsole(console.build());
-            return resp;
-        }
-
-        console.info("Configuracion de conexion Cassandra valida.");
-        console.info("Iniciando analisis semantico CQL...");
-
-        AnalizadorCql analizador = new AnalizadorCql();
-        ResultadoSemantico resultadoSemantico = analizador.analizar(sql, dbConfig);
-
-        boolean lexicoValido = resultadoSemantico.getResultadoLexer() != null
-            && resultadoSemantico.getResultadoLexer().isValido();
-        boolean semanticoValido = resultadoSemantico.isValido();
-
-        List<ErrorLexico> lexicalErrors = new ArrayList<>();
-        List<ErrorLexico> syntaxErrors = new ArrayList<>();
-        if (resultadoSemantico.getResultadoLexer() != null) {
-            for (ErrorLexico err : resultadoSemantico.getResultadoLexer().getErrores()) {
-                if (err.getCodigo().equals("E001") || err.getCodigo().equals("E000")) {
-                    lexicalErrors.add(err);
-                } else {
-                    syntaxErrors.add(err);
-                }
-            }
-        }
-
-        List<CompilerErrorDto> lexicalErrorDtos = mapper.toCompilerErrorDtoList(lexicalErrors, "LEXICAL", "ERROR");
-        List<CompilerErrorDto> syntaxErrorDtos = mapper.toCompilerErrorDtoList(syntaxErrors, "SYNTAX", "ERROR");
-        SemanticResultDto semanticResult = mapper.toSemanticResultDto(resultadoSemantico);
-
-        List<CompilerErrorDto> allErrors = new ArrayList<>();
-        allErrors.addAll(lexicalErrorDtos);
-        allErrors.addAll(syntaxErrorDtos);
-        if (semanticResult != null && semanticResult.getErrors() != null) {
-            allErrors.addAll(semanticResult.getErrors());
-        }
-
-        ExecutionStatus status;
-        String message;
-        boolean valid;
-
-        if (!lexicoValido) {
-            status = ExecutionStatus.LEXICAL_ERROR;
-            message = "La sentencia CQL contiene errores lexicos.";
-            valid = false;
-        } else if (!syntaxErrors.isEmpty()) {
-            status = ExecutionStatus.SYNTAX_ERROR;
-            message = "La sentencia CQL contiene errores sintacticos.";
-            valid = false;
-        } else if (!semanticoValido) {
-            status = ExecutionStatus.SEMANTIC_ERROR;
-            message = resultadoSemantico.getMensaje();
-            valid = false;
-        } else {
-            status = ExecutionStatus.SUCCESS;
-            message = "La sentencia CQL es valida a nivel lexico, sintactico y semantico.";
-            valid = true;
-        }
-
-        int warningCount = semanticResult != null && semanticResult.getWarnings() != null
-            ? semanticResult.getWarnings().size() : 0;
-
-        CompilerSummaryDto summary = new CompilerSummaryDto();
-        summary.setTokenCount(0);
-        summary.setLexicalErrorCount(lexicalErrorDtos.size());
-        summary.setSyntaxErrorCount(syntaxErrorDtos.size());
-        summary.setSemanticErrorCount(semanticResult != null && semanticResult.getErrors() != null
-            ? semanticResult.getErrors().size() : 0);
-        summary.setWarningCount(warningCount);
-        summary.setAnalyzedAt(LocalDateTime.now());
-
-        CompilerAnalyzeResponse response = new CompilerAnalyzeResponse();
-        response.setRequestId(request.getRequestId());
-        response.setDialect(dialect);
-        response.setAnalysisMode(mode);
-        response.setValid(valid);
-        response.setMessage(message);
-        response.setExecutionStatus(status);
-        response.setSummary(summary);
-        response.setConnectionResult(null);
-        response.setSemanticResult(semanticResult);
-        response.setErrors(allErrors.isEmpty() ? null : allErrors);
-        response.setConsole(console.build());
-
-        return response;
-    }
-
-    private CompilerAnalyzeResponse analyzeMongo(CompilerAnalyzeRequest request, SqlDialect dialect,
-                                                  String sql, AnalysisMode mode, CompilerOptionsRequest options) {
-        if (mode == AnalysisMode.SEMANTIC_ONLY || mode == AnalysisMode.FULL) {
-            return analyzeMongoSemantic(request, dialect, sql);
-        }
-        return analyzeMongoLexicalSyntax(request, dialect, sql);
-    }
-
-    private CompilerAnalyzeResponse analyzeMongoLexicalSyntax(CompilerAnalyzeRequest request, SqlDialect dialect,
-                                                               String sql) {
-        AnalizadorMongo analizador = new AnalizadorMongo();
-        com.umg.model.semantic.result.ResultadoSemantico resultado = analizador.analizar(sql, null);
-
-        MongoParseResult mongoResult = null;
-        boolean valid = resultado.isValido();
-
-        CompilerAnalyzeResponse response = new CompilerAnalyzeResponse();
-        response.setRequestId(request.getRequestId());
-        response.setDialect(dialect);
-        response.setAnalysisMode(AnalysisMode.LEXICAL_SYNTAX);
-        response.setValid(valid);
-        response.setExecutionStatus(valid ? ExecutionStatus.SUCCESS : ExecutionStatus.SYNTAX_ERROR);
-        response.setMessage(valid ? "Pipeline MongoDB valido." : "El pipeline MongoDB contiene errores sintacticos.");
-        response.setSemanticResult(mapper.toSemanticResultDto(resultado));
-
-        CompilerSummaryDto summary = new CompilerSummaryDto();
-        summary.setSemanticErrorCount(resultado.getErroresSemanticos() != null ? resultado.getErroresSemanticos().size() : 0);
-        summary.setAnalyzedAt(LocalDateTime.now());
-        response.setSummary(summary);
-
-        response.setConsole(console.build());
-        return response;
-    }
-
-    private CompilerAnalyzeResponse analyzeMongoSemantic(CompilerAnalyzeRequest request, SqlDialect dialect,
-                                                          String sql) {
-        ConexionBaseDatosConfig dbConfig = mapper.toConexionConfig(request.getConnectionConfig());
-
-        if (dbConfig == null || !dbConfig.esValida()) {
-            CompilerAnalyzeResponse resp = buildErrorResponse(request, ExecutionStatus.INVALID_REQUEST);
-            resp.setMessage("Se requiere configuracion de conexion MongoDB para el modo FULL.");
-            console.error("Configuracion de conexion MongoDB no proporcionada o invalida.");
-            console.failed("Solicitud invalida.");
-            resp.setConsole(console.build());
-            return resp;
-        }
-
-        console.info("Configuracion de conexion MongoDB valida.");
-        console.info("Iniciando analisis semantico MongoDB...");
-
-        AnalizadorMongo analizador = new AnalizadorMongo();
-        ResultadoSemantico resultadoSemantico = analizador.analizar(sql, dbConfig);
-
-        SemanticResultDto semanticResult = mapper.toSemanticResultDto(resultadoSemantico);
-
-        boolean semanticoValido = resultadoSemantico.isValido();
-        ExecutionStatus status = semanticoValido ? ExecutionStatus.SUCCESS : ExecutionStatus.SEMANTIC_ERROR;
-        String message = semanticoValido ? "Pipeline MongoDB valido." : resultadoSemantico.getMensaje();
-
-        int warningCount = semanticResult != null && semanticResult.getWarnings() != null
-            ? semanticResult.getWarnings().size() : 0;
-
-        CompilerSummaryDto summary = new CompilerSummaryDto();
-        summary.setSemanticErrorCount(semanticResult != null && semanticResult.getErrors() != null
-            ? semanticResult.getErrors().size() : 0);
-        summary.setWarningCount(warningCount);
-        summary.setAnalyzedAt(LocalDateTime.now());
-
-        CompilerAnalyzeResponse response = new CompilerAnalyzeResponse();
-        response.setRequestId(request.getRequestId());
-        response.setDialect(dialect);
-        response.setAnalysisMode(AnalysisMode.FULL);
-        response.setValid(semanticoValido);
-        response.setMessage(message);
-        response.setExecutionStatus(status);
-        response.setSummary(summary);
-        response.setSemanticResult(semanticResult);
-        response.setConsole(console.build());
-
-        return response;
-    }
 
     private CompilerAnalyzeResponse buildErrorResponse(CompilerAnalyzeRequest request, ExecutionStatus status) {
         CompilerAnalyzeResponse resp = new CompilerAnalyzeResponse();
