@@ -52,9 +52,30 @@ public class CompilerFacadeService {
             return badRequest(request, "connectionConfig es obligatorio para FULL.");
         }
 
+        com.umg.model.semantic.config.ConexionBaseDatosConfig config;
+        com.umg.api.compiler.dto.ConnectionConfigDto connDto = request.getConnectionConfig();
+        if (request.getDialect() == CompilerDialect.MONGODB || request.getDialect() == CompilerDialect.CASSANDRA_CQL) {
+            config = new com.umg.model.semantic.config.ConexionBaseDatosConfig();
+            config.setDialecto(
+                request.getDialect() == CompilerDialect.CASSANDRA_CQL
+                    ? com.umg.model.dialect.SqlDialect.CASSANDRA
+                    : com.umg.model.dialect.SqlDialect.MONGODB
+            );
+            config.setHost(connDto.getHost());
+            config.setPuerto(connDto.getPort() != null ? connDto.getPort() : 0);
+            config.setBaseDatos(connDto.getDatabase());
+            config.setEsquema(connDto.getSchema());
+            config.setUsuario(connDto.getUsername());
+            config.setPassword(connDto.getPassword());
+            config.setUrlJdbc(connDto.getJdbcUrl());
+            config.setUsarUrlJdbcDirecta(connDto.getUseDirectJdbcUrl() != null ? connDto.getUseDirectJdbcUrl() : false);
+            config.setLocalDatacenter(connDto.getLocalDatacenter());
+        } else {
+            config = mapper.toConexionConfig(connDto, request.getDialect());
+        }
+
         Map<String, Object> connection = connectionValidationService
-            .testConnection(request.getConnectionConfig().getDialect(),
-                mapper.toConexionConfig(request.getConnectionConfig(), request.getDialect()));
+            .testConnection(request.getConnectionConfig().getDialect(), config);
 
         boolean connected = Boolean.TRUE.equals(connection.get("connected"));
         if (!connected) {
