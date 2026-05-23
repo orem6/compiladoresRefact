@@ -41,16 +41,15 @@ public class ConnectionValidationService {
             return result;
         }
 
-        SqlDialect sqlDialect = DialectMapper.toSqlDialect(dialect);
-
-        if (sqlDialect == SqlDialect.CASSANDRA) {
+        if (dialect == CompilerDialect.CASSANDRA_CQL) {
             return testCqlConnection(config, dialect);
         }
 
-        if (sqlDialect == SqlDialect.MONGODB) {
+        if (dialect == CompilerDialect.MONGODB) {
             return testMongoConnection(config, dialect);
         }
 
+        SqlDialect sqlDialect = DialectMapper.toSqlDialect(dialect);
         return testJdbcConnection(config, dialect, sqlDialect);
     }
 
