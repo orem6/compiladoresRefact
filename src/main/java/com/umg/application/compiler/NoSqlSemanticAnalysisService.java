@@ -25,7 +25,7 @@ public class NoSqlSemanticAnalysisService {
     }
 
     public SemanticResultDto analyze(CompilerAnalyzeRequest request) {
-        ConexionBaseDatosConfig config = mapper.toConexionConfig(request.getConnectionConfig(), request.getDialect());
+        ConexionBaseDatosConfig config = buildNoSqlConfig(request);
         if (config == null || !config.esValida()) {
             SemanticResultDto invalid = new SemanticResultDto();
             invalid.setValid(false);
@@ -80,5 +80,26 @@ public class NoSqlSemanticAnalysisService {
         }
         dto.setValidatedObjects(validatedObjects);
         return dto;
+    }
+
+    private ConexionBaseDatosConfig buildNoSqlConfig(CompilerAnalyzeRequest request) {
+        com.umg.api.compiler.dto.ConnectionConfigDto dto = request.getConnectionConfig();
+        if (dto == null) return null;
+        ConexionBaseDatosConfig config = new ConexionBaseDatosConfig();
+        config.setDialecto(
+            request.getDialect() == CompilerDialect.CASSANDRA_CQL
+                ? com.umg.model.dialect.SqlDialect.CASSANDRA
+                : com.umg.model.dialect.SqlDialect.MONGODB
+        );
+        config.setHost(dto.getHost());
+        config.setPuerto(dto.getPort() != null ? dto.getPort() : 0);
+        config.setBaseDatos(dto.getDatabase());
+        config.setEsquema(dto.getSchema());
+        config.setUsuario(dto.getUsername());
+        config.setPassword(dto.getPassword());
+        config.setUrlJdbc(dto.getJdbcUrl());
+        config.setUsarUrlJdbcDirecta(dto.getUseDirectJdbcUrl() != null ? dto.getUseDirectJdbcUrl() : false);
+        config.setLocalDatacenter(dto.getLocalDatacenter());
+        return config;
     }
 }
