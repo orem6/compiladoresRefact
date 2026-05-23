@@ -35,7 +35,7 @@ public class MongoConnectionFactory {
                 ? config.getBaseDatos() : "admin";
             String user = config.getUsuario();
             String pass = config.getPassword() != null ? config.getPassword() : "";
-            String uri = "mongodb://" + user + ":" + pass + "@" + host + ":" + port + "/" + database + "?authSource=" + database;
+            String uri = "mongodb://" + user + ":" + pass + "@" + host + ":" + port + "/" + database + "?authSource=admin";
             settingsBuilder.applyConnectionString(new com.mongodb.ConnectionString(uri));
         }
 
