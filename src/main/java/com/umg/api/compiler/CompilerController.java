@@ -281,8 +281,29 @@ public class CompilerController {
             connectionConfig.setPort(port);
         }
 
-        com.umg.api.compiler.mapper.CompilerResponseMapper mapper = new com.umg.api.compiler.mapper.CompilerResponseMapper();
-        com.umg.model.semantic.config.ConexionBaseDatosConfig config = mapper.toConexionConfig(connectionConfig, dialectToUse);
+        com.umg.model.semantic.config.ConexionBaseDatosConfig config;
+
+        if (dialectToUse == com.umg.model.dialect.CompilerDialect.CASSANDRA_CQL
+            || dialectToUse == com.umg.model.dialect.CompilerDialect.MONGODB) {
+            config = new com.umg.model.semantic.config.ConexionBaseDatosConfig();
+            config.setDialecto(
+                dialectToUse == com.umg.model.dialect.CompilerDialect.CASSANDRA_CQL
+                    ? com.umg.model.dialect.SqlDialect.CASSANDRA
+                    : com.umg.model.dialect.SqlDialect.MONGODB
+            );
+            config.setHost(connectionConfig.getHost());
+            config.setPuerto(connectionConfig.getPort() != null ? connectionConfig.getPort() : 0);
+            config.setBaseDatos(connectionConfig.getDatabase());
+            config.setEsquema(connectionConfig.getSchema());
+            config.setUsuario(connectionConfig.getUsername());
+            config.setPassword(connectionConfig.getPassword());
+            config.setUrlJdbc(connectionConfig.getJdbcUrl());
+            config.setUsarUrlJdbcDirecta(connectionConfig.getUseDirectJdbcUrl() != null ? connectionConfig.getUseDirectJdbcUrl() : false);
+            config.setLocalDatacenter(connectionConfig.getLocalDatacenter());
+        } else {
+            com.umg.api.compiler.mapper.CompilerResponseMapper mapper = new com.umg.api.compiler.mapper.CompilerResponseMapper();
+            config = mapper.toConexionConfig(connectionConfig, dialectToUse);
+        }
 
         if (config == null || !config.esValida()) {
             result.put("message", "Configuracion de conexion invalida. Verifique los campos obligatorios.");
