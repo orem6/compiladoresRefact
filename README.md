@@ -74,6 +74,21 @@ java -jar target/sql-compiler-1.0.0.jar
 
 El servidor inicia en `http://localhost:8080`.
 
+### Variables de Entorno (opcional)
+
+El archivo `.env.example` contiene las variables configurables. Para usarlas:
+
+```bash
+cp .env.example .env
+export $(cat .env | xargs)
+mvn spring-boot:run
+```
+
+| Variable | Default | Descripción |
+|---|---|---|
+| `SERVER_PORT` | `8080` | Puerto del servidor |
+| `CORS_ALLOWED_ORIGINS` | `http://localhost:5173,http://localhost:3000` | Orígenes CORS permitidos |
+
 ---
 
 ## Ejecutar Tests
