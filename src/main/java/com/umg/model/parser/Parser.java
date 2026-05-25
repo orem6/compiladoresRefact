@@ -195,12 +195,18 @@ public class Parser {
     private void parseJoin() {
         String joinType = consume().getLexeme().toUpperCase();
 
-        if (checkKeyword("OUTER")) {
+        if (joinType.equals("JOIN")) {
+            // Bare JOIN (equivalent to INNER JOIN) - already consumed, nothing else needed
+        } else if (checkKeyword("OUTER")) {
             joinType += " " + consume().getLexeme().toUpperCase();
-        }
-
-        if (checkKeyword("JOIN")) {
-            consume();
+            if (checkKeyword("JOIN")) {
+                consume();
+            } else {
+                addError("JOIN esperado despues de " + joinType);
+                return;
+            }
+        } else if (checkKeyword("JOIN")) {
+            consume(); // e.g. "INNER JOIN" - INNER was consumed, now consume JOIN
         } else if (checkKeyword("INNER") || checkKeyword("LEFT") || checkKeyword("RIGHT") ||
                    checkKeyword("FULL") || checkKeyword("CROSS")) {
             joinType += " " + consume().getLexeme().toUpperCase();
@@ -248,33 +254,39 @@ public class Parser {
     }
 
     private void parseJoinCondition() {
-        if (position < tokens.size() &&
-            (checkTokenType(TokenType.IDENTIFICADOR) || checkTokenType(TokenType.PALABRA_RESERVADA))) {
+        parseCondition();
+        while (checkKeyword("AND") || checkKeyword("OR")) {
             consume();
-
-            if (checkTokenType(TokenType.PUNTO)) {
-                consume();
-                if (checkTokenType(TokenType.IDENTIFICADOR) || checkTokenType(TokenType.PALABRA_RESERVADA)) {
-                    consume();
-                }
-            }
-
-            if (checkTokenType(TokenType.OPERADOR_COMPARACION) || checkTokenType(TokenType.OPERADOR)) {
-                consume();
-                parseValue();
-            }
+            parseCondition();
         }
     }
 
     private void parseWhere() {
         consume(); // WHERE
-        if (checkTokenType(TokenType.IDENTIFICADOR) || checkTokenType(TokenType.PALABRA_RESERVADA) ||
-            checkTokenType(TokenType.IDENTIFICADOR_DELIMITADO) || checkTokenType(TokenType.NUMERO_ENTERO) ||
-            checkTokenType(TokenType.NUMERO_DECIMAL) || checkTokenType(TokenType.CADENA)) {
-            parseCondition();
-        }
+        parseWhereCondition();
         while (checkKeyword("AND") || checkKeyword("OR")) {
             consume();
+            parseWhereCondition();
+        }
+    }
+
+    private void parseWhereCondition() {
+        if (checkTokenType(TokenType.PARENTESIS_IZQUIERDO)) {
+            consume(); // (
+            parseWhereCondition();
+            while (checkKeyword("AND") || checkKeyword("OR")) {
+                consume();
+                parseWhereCondition();
+            }
+            if (checkTokenType(TokenType.PARENTESIS_DERECHO)) {
+                consume(); // )
+            } else {
+                addError(") esperado para cerrar parentesis en WHERE");
+            }
+        } else if (checkTokenType(TokenType.IDENTIFICADOR) || checkTokenType(TokenType.PALABRA_RESERVADA) ||
+            checkTokenType(TokenType.IDENTIFICADOR_DELIMITADO) || checkTokenType(TokenType.NUMERO_ENTERO) ||
+            checkTokenType(TokenType.NUMERO_DECIMAL) || checkTokenType(TokenType.CADENA) ||
+            checkTokenType(TokenType.FUNCION)) {
             parseCondition();
         }
     }
@@ -1202,7 +1214,15 @@ public class Parser {
                 addError(") sin cerrar en CTE");
             }
 
-            break; // only parse first CTE for basic validation, then expect SELECT
+            // Check for comma to parse additional CTEs
+            if (!checkTokenType(TokenType.COMA)) {
+                break;
+            }
+        }
+
+        if (position >= tokens.size() || checkTokenType(TokenType.EOF)) {
+            addError("SELECT esperado despues de definicion(es) CTE");
+            return new SelectStatement();
         }
 
         if (!checkKeyword("SELECT")) {
