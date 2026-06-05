@@ -60,34 +60,16 @@ public class SqlReferenceExtractor {
         return null;
     }
 
-    private static final Set<String> JOIN_SKIP = new HashSet<>(Arrays.asList(
-        "JOIN", "INNER", "LEFT", "RIGHT", "FULL", "CROSS", "OUTER", "ON"));
-
     private void extraerSelect(ReferenciasSql refs, List<Token> tokens, SqlDialect dialecto) {
         int fromIdx = indexOfKeyword(tokens, "FROM");
         if (fromIdx < 0) return;
 
-        boolean skippingOn = false;
         int i = fromIdx + 1;
         while (i < tokens.size()) {
             Token t = tokens.get(i);
             if (esFinDeConsulta(t)) break;
             String upper = t.getLexeme().toUpperCase();
-
-            if (skippingOn) {
-                if (esClauseKeyword(upper) && !JOIN_SKIP.contains(upper)) break;
-                if (JOIN_SKIP.contains(upper)) skippingOn = false;
-                i++;
-                continue;
-            }
-
-            if (esClauseKeyword(upper) && !JOIN_SKIP.contains(upper)) break;
-
-            if (JOIN_SKIP.contains(upper)) {
-                if (upper.equals("ON")) skippingOn = true;
-                i++;
-                continue;
-            }
+            if (esClauseKeyword(upper) && !upper.equals("ON")) break;
 
             if (esIdentificador(t)) {
                 String rawNombre = t.getLexeme();
@@ -115,7 +97,7 @@ public class SqlReferenceExtractor {
                 if (i < tokens.size() && esIdentificador(tokens.get(i))
                     && !esClauseKeyword(tokens.get(i).getLexeme().toUpperCase())
                     && !STMT_KEYWORDS.contains(tokens.get(i).getLexeme().toUpperCase())
-                    && !JOIN_SKIP.contains(tokens.get(i).getLexeme().toUpperCase())) {
+                    && !tokens.get(i).getLexeme().toUpperCase().equals("ON")) {
                     String alias = normalizer.normalizar(tokens.get(i).getLexeme(), dialecto);
                     rt.setAlias(alias);
                     refs.addAlias(alias, rt);
@@ -126,20 +108,14 @@ public class SqlReferenceExtractor {
                     Token ct = tokens.get(i);
                     String cu = ct.getLexeme().toUpperCase();
                     if (esFinDeConsulta(ct)) break;
-                    if (esClauseKeyword(cu) && !JOIN_SKIP.contains(cu)) break;
-                    if (JOIN_SKIP.contains(cu)) {
-                        if (cu.equals("ON")) skippingOn = true;
-                        i++;
-                        break;
-                    }
+                    if (esClauseKeyword(cu)) break;
                     if (esIdentificador(ct)) {
                         ReferenciaTabla rt2 = new ReferenciaTabla(normalizer.normalizar(ct.getLexeme(), dialecto), null, null,
                             ct.getLinea(), ct.getColumna());
                         refs.addTabla(rt2);
                         i++;
                         if (i < tokens.size() && esIdentificador(tokens.get(i))
-                            && !esClauseKeyword(tokens.get(i).getLexeme().toUpperCase())
-                            && !JOIN_SKIP.contains(tokens.get(i).getLexeme().toUpperCase())) {
+                            && !esClauseKeyword(tokens.get(i).getLexeme().toUpperCase())) {
                             rt2.setAlias(normalizer.normalizar(tokens.get(i).getLexeme(), dialecto));
                             refs.addAlias(rt2.getAlias(), rt2);
                             i++;
@@ -147,13 +123,6 @@ public class SqlReferenceExtractor {
                         continue;
                     }
                     i++;
-                }
-
-                if (i < tokens.size()) {
-                    String cuAfter = tokens.get(i).getLexeme().toUpperCase();
-                    if (esClauseKeyword(cuAfter) && !JOIN_SKIP.contains(cuAfter)) {
-                        break;
-                    }
                 }
             }
             i++;
@@ -173,10 +142,6 @@ public class SqlReferenceExtractor {
             Token t = tokens.get(i);
             if (t.getLexeme().equals("*")) { i++; continue; }
             if (t.getType() == TokenType.COMA || t.getType() == TokenType.PUNTO) { i++; continue; }
-            if (t.getLexeme().equalsIgnoreCase("AS")) {
-                i += 2;
-                continue;
-            }
             if (t.getType() == TokenType.FUNCION) {
                 i++;
                 if (i < tokens.size() && tokens.get(i).getType() == TokenType.PARENTESIS_IZQUIERDO) {
@@ -186,37 +151,20 @@ public class SqlReferenceExtractor {
                         if (tokens.get(i).getType() == TokenType.PARENTESIS_IZQUIERDO) parenDepth++;
                         else if (tokens.get(i).getType() == TokenType.PARENTESIS_DERECHO) parenDepth--;
                         if (parenDepth > 0) {
-                            if (i + 1 < tokens.size() && tokens.get(i + 1).getType() == TokenType.PUNTO) {
-                                String calificador = normalizer.normalizar(tokens.get(i).getLexeme(), dialecto);
-                                i += 2;
-                                if (i < tokens.size() && esIdentificador(tokens.get(i)) && parenDepth > 0) {
-                                    refs.addColumna(new ReferenciaColumna(
-                                        normalizer.normalizar(tokens.get(i).getLexeme(), dialecto),
-                                        calificador, tokens.get(i).getLinea(), tokens.get(i).getColumna()));
-                                }
-                            } else {
-                                String colRaw = tokens.get(i).getLexeme();
-                                if (!colRaw.equals(",") && !colRaw.equals("*") && esIdentificador(tokens.get(i))) {
-                                    refs.addColumna(new ReferenciaColumna(
-                                        normalizer.normalizar(colRaw, dialecto), null,
-                                        tokens.get(i).getLinea(), tokens.get(i).getColumna()));
-                                }
+                            String colRaw = tokens.get(i).getLexeme();
+                            if (!colRaw.equals(",") && !colRaw.equals("*")) {
+                                refs.addColumna(new ReferenciaColumna(
+                                    normalizer.normalizar(colRaw, dialecto), null,
+                                    tokens.get(i).getLinea(), tokens.get(i).getColumna()));
                             }
                         }
                         i++;
                     }
                 }
-                if (i < fromIdx && tokens.get(i).getLexeme().equalsIgnoreCase("AS")) {
-                    i += 2;
-                }
                 continue;
             }
             if (esIdentificador(t)) {
                 String raw = t.getLexeme();
-                if (raw.equalsIgnoreCase("AS")) {
-                    i += 2;
-                    continue;
-                }
                 String nombre = normalizer.normalizar(raw, dialecto);
                 int linea = t.getLinea();
                 int col = t.getColumna();

@@ -69,11 +69,8 @@ public class CqlParser {
         result.addDetectedClause("SELECT");
         advance();
         NoSqlToken next = current();
-        if (next.getType() == NoSqlTokenType.OPERATOR && "*".equals(next.getLexeme())) {
-            advance();
-        } else {
-            parseSelectItemList();
-        }
+        if (next.getType() == NoSqlTokenType.OPERATOR && "*".equals(next.getLexeme())) { advance(); }
+        else { parseIdentifierList(); }
         expectKeyword("FROM", "CQL_EXPECTED_FROM", "Se esperaba FROM en SELECT.");
         result.addDetectedClause("FROM");
         parseTableName();
@@ -221,89 +218,6 @@ public class CqlParser {
             else if (t.getType() == NoSqlTokenType.COMMA) { advance(); }
             else { break; }
         }
-    }
-
-    private void parseSelectItemList() {
-        boolean first = true;
-        while (pos < tokens.size()) {
-            if (!first) {
-                if (current().getType() == NoSqlTokenType.COMMA) {
-                    advance();
-                } else {
-                    break;
-                }
-            }
-            first = false;
-            parseSelectItem();
-            if (current().getLexeme().equalsIgnoreCase("AS")) {
-                advance();
-                if (current().getType() == NoSqlTokenType.IDENTIFIER) {
-                    advance();
-                }
-            } else if (current().getType() == NoSqlTokenType.IDENTIFIER &&
-                       !current().getLexeme().equalsIgnoreCase("FROM")) {
-                advance();
-            }
-        }
-    }
-
-    private void parseSelectItem() {
-        NoSqlToken t = current();
-        if (t.getType() == NoSqlTokenType.IDENTIFIER || t.getType() == NoSqlTokenType.KEYWORD || t.getType() == NoSqlTokenType.METHOD) {
-            if (peekType(1) == NoSqlTokenType.LEFT_PAREN) {
-                parseFunctionCall();
-                return;
-            }
-            advance();
-            if (current().getType() == NoSqlTokenType.DOT) {
-                advance();
-                if (current().getType() == NoSqlTokenType.IDENTIFIER || current().getType() == NoSqlTokenType.KEYWORD) {
-                    advance();
-                }
-            }
-            return;
-        }
-        if (t.getType() == NoSqlTokenType.OPERATOR && "*".equals(t.getLexeme())) {
-            advance();
-            return;
-        }
-        if (t.getType() == NoSqlTokenType.LEFT_PAREN) {
-            skipUntilRightParen();
-            return;
-        }
-        addError("CQL_INVALID_SELECT_ITEM", "Elemento invalido en lista SELECT.", t);
-        advance();
-    }
-
-    private void parseFunctionCall() {
-        advance();
-        if (current().getType() != NoSqlTokenType.LEFT_PAREN) {
-            addError("CQL_EXPECTED_LEFT_PAREN", "Se esperaba '(' despues de funcion.", current());
-            return;
-        }
-        int depth = 0;
-        while (pos < tokens.size()) {
-            NoSqlToken t = advance();
-            if (t.getType() == NoSqlTokenType.LEFT_PAREN) depth++;
-            if (t.getType() == NoSqlTokenType.RIGHT_PAREN) {
-                depth--;
-                if (depth == 0) {
-                    break;
-                }
-            }
-            if (t.getType() == NoSqlTokenType.EOF || t.getType() == NoSqlTokenType.SEMICOLON) {
-                addError("CQL_UNBALANCED_PARENTHESES", "Parentesis desbalanceados en funcion SELECT.", t);
-                break;
-            }
-        }
-    }
-
-    private NoSqlTokenType peekType(int offset) {
-        int idx = pos + offset;
-        if (idx >= 0 && idx < tokens.size()) {
-            return tokens.get(idx).getType();
-        }
-        return NoSqlTokenType.EOF;
     }
 
     private void skipUntilSemicolon() {

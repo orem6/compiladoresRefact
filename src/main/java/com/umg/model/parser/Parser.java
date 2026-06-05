@@ -70,27 +70,6 @@ public class Parser {
             consume();
         }
 
-        if (checkKeyword("TOP")) {
-            consume();
-            skipComments();
-            if (checkTokenType(TokenType.NUMERO_ENTERO)) {
-                consume();
-            } else {
-                addError("Numero esperado despues de TOP");
-            }
-            if (checkKeyword("PERCENT")) {
-                consume();
-            }
-            if (checkKeyword("WITH")) {
-                consume();
-                if (checkKeyword("TIES")) {
-                    consume();
-                } else {
-                    addError("TIES esperado despues de WITH");
-                }
-            }
-        }
-
         if (checkTokenType(TokenType.ASTERISCO)) {
             consume(); // *
         } else {
@@ -101,15 +80,7 @@ public class Parser {
         if (checkKeyword("FROM")) {
             consume();
             skipComments();
-            if (checkTokenType(TokenType.PARENTESIS_IZQUIERDO)) {
-                parseParenthesizedExpression();
-                if (checkKeyword("AS")) {
-                    consume();
-                    if (checkTokenType(TokenType.IDENTIFICADOR) || checkTokenType(TokenType.PALABRA_RESERVADA)) {
-                        consume();
-                    }
-                }
-            } else if (!parseTableName()) {
+            if (!parseTableName()) {
                 addError("Nombre de tabla invalido despues de FROM");
                 advanceToSemicolonOrEnd();
                 return new SelectStatement();
@@ -163,58 +134,12 @@ public class Parser {
             if (checkKeyword("FROM")) break;
             if (isClauseKeyword()) break;
 
-            if (checkKeyword("CASE")) {
-                consume();
-                while (position < tokens.size()
-                    && !checkKeyword("END")
-                    && !isClauseKeyword()
-                    && !checkKeyword("FROM")) {
-                    consume();
-                }
-                if (checkKeyword("END")) {
-                    consume();
-                }
-                if (checkKeyword("AS")) {
-                    consume();
-                    if (checkTokenType(TokenType.IDENTIFICADOR) || checkTokenType(TokenType.PALABRA_RESERVADA)) {
-                        consume();
-                    }
-                }
-                first = false;
-                continue;
-            }
-
             if (!first) {
-                if (checkKeyword("AS")) {
-                    consume();
-                    if (checkTokenType(TokenType.IDENTIFICADOR) || checkTokenType(TokenType.PALABRA_RESERVADA)) {
-                        consume();
-                    }
-                    continue;
-                }
-                if (checkTokenType(TokenType.OPERADOR)) {
-                    consume();
-                    first = true;
-                    continue;
-                }
-                if (checkTokenType(TokenType.PARENTESIS_IZQUIERDO)) {
-                    parseParenthesizedExpression();
-                    if (checkKeyword("AS")) {
-                        consume();
-                        if (checkTokenType(TokenType.IDENTIFICADOR) || checkTokenType(TokenType.PALABRA_RESERVADA)) {
-                            consume();
-                        }
-                    }
-                    first = false;
-                    continue;
-                }
                 if (!checkTokenType(TokenType.COMA)) break;
                 consume();
                 skipComments();
                 if (checkKeyword("FROM")) break;
                 if (isClauseKeyword()) break;
-                first = true;
-                continue;
             }
             first = false;
 
@@ -222,14 +147,6 @@ public class Parser {
                 consume();
             } else if (checkTokenType(TokenType.IDENTIFICADOR_DELIMITADO)) {
                 consume();
-            } else if (checkTokenType(TokenType.PARENTESIS_IZQUIERDO)) {
-                parseParenthesizedExpression();
-                if (checkKeyword("AS")) {
-                    consume();
-                    if (checkTokenType(TokenType.IDENTIFICADOR) || checkTokenType(TokenType.PALABRA_RESERVADA)) {
-                        consume();
-                    }
-                }
             } else if (checkTokenType(TokenType.IDENTIFICADOR) || checkTokenType(TokenType.PALABRA_RESERVADA)) {
                 consume();
                 if (checkTokenType(TokenType.PUNTO)) {
@@ -351,51 +268,18 @@ public class Parser {
 
     private void parseWhere() {
         consume(); // WHERE
-        int start = position;
         if (checkTokenType(TokenType.IDENTIFICADOR) || checkTokenType(TokenType.PALABRA_RESERVADA) ||
             checkTokenType(TokenType.IDENTIFICADOR_DELIMITADO) || checkTokenType(TokenType.NUMERO_ENTERO) ||
-            checkTokenType(TokenType.NUMERO_DECIMAL) || checkTokenType(TokenType.CADENA) ||
-            checkTokenType(TokenType.FUNCION) || checkTokenType(TokenType.PARENTESIS_IZQUIERDO) ||
-            checkKeyword("NOT") || checkKeyword("EXISTS")) {
+            checkTokenType(TokenType.NUMERO_DECIMAL) || checkTokenType(TokenType.CADENA)) {
             parseCondition();
-        }
-        if (position == start) {
-            addError("Condicion esperada despues de WHERE");
-            return;
         }
         while (checkKeyword("AND") || checkKeyword("OR")) {
             consume();
-            int connectorPos = position;
             parseCondition();
-            if (position == connectorPos) {
-                addError("Condicion esperada despues de operador logico");
-                break;
-            }
         }
     }
 
     private void parseCondition() {
-        if (checkKeyword("EXISTS")) {
-            consume();
-            if (checkTokenType(TokenType.PARENTESIS_IZQUIERDO)) {
-                parseParenthesizedExpression();
-            } else {
-                addError("( esperado despues de EXISTS");
-            }
-            return;
-        }
-
-        if (checkKeyword("NOT") && checkKeywordAhead("EXISTS", 1)) {
-            consume();
-            consume();
-            if (checkTokenType(TokenType.PARENTESIS_IZQUIERDO)) {
-                parseParenthesizedExpression();
-            } else {
-                addError("( esperado despues de NOT EXISTS");
-            }
-            return;
-        }
-
         parseValue();
 
         if (checkTokenType(TokenType.OPERADOR_COMPARACION) || checkTokenType(TokenType.OPERADOR)) {
@@ -1401,18 +1285,6 @@ public class Parser {
     private boolean checkKeyword(String keyword) {
         if (position >= tokens.size()) return false;
         Token t = tokens.get(position);
-        return (t.getType() == TokenType.PALABRA_RESERVADA ||
-                t.getType() == TokenType.KEYWORD ||
-                t.getType() == TokenType.TIPO_DATO ||
-                t.getType() == TokenType.IDENTIFICADOR ||
-                t.getType() == TokenType.OPERADOR_LOGICO) &&
-               t.getLexeme().equalsIgnoreCase(keyword);
-    }
-
-    private boolean checkKeywordAhead(String keyword, int offset) {
-        int idx = position + offset;
-        if (idx < 0 || idx >= tokens.size()) return false;
-        Token t = tokens.get(idx);
         return (t.getType() == TokenType.PALABRA_RESERVADA ||
                 t.getType() == TokenType.KEYWORD ||
                 t.getType() == TokenType.TIPO_DATO ||
