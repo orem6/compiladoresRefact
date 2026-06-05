@@ -381,4 +381,76 @@ class ParserTest {
         parser.parse(tokens);
         assertFalse(ec.hasErrors(), "RIGHT OUTER JOIN deberia ser valido");
     }
+
+    @Test
+    void testParseSubqueryInSelectList() {
+        ErrorCollector ec = new ErrorCollector();
+        Lexer lexer = new Lexer(ec);
+        List<Token> tokens = lexer.tokenize("SELECT id, (SELECT MAX(id) FROM pedidos) AS max_id FROM clientes;");
+        assertFalse(ec.hasErrors());
+
+        Parser parser = new Parser(ec);
+        parser.parse(tokens);
+        assertFalse(ec.hasErrors(), "Subquery en SELECT deberia ser valido. Errores: " + ec.getErrors());
+    }
+
+    @Test
+    void testParseSubqueryInFrom() {
+        ErrorCollector ec = new ErrorCollector();
+        Lexer lexer = new Lexer(ec);
+        List<Token> tokens = lexer.tokenize("SELECT * FROM (SELECT id, nombre FROM clientes) AS sub;");
+        assertFalse(ec.hasErrors());
+
+        Parser parser = new Parser(ec);
+        parser.parse(tokens);
+        assertFalse(ec.hasErrors(), "Subquery en FROM deberia ser valido. Errores: " + ec.getErrors());
+    }
+
+    @Test
+    void testParseCaseExpression() {
+        ErrorCollector ec = new ErrorCollector();
+        Lexer lexer = new Lexer(ec);
+        List<Token> tokens = lexer.tokenize("SELECT CASE WHEN id = 1 THEN 'one' ELSE 'other' END FROM clientes;");
+        assertFalse(ec.hasErrors());
+
+        Parser parser = new Parser(ec);
+        parser.parse(tokens);
+        assertFalse(ec.hasErrors(), "CASE WHEN en SELECT deberia ser valido. Errores: " + ec.getErrors());
+    }
+
+    @Test
+    void testParseSelectWithTop() {
+        ErrorCollector ec = new ErrorCollector();
+        Lexer lexer = new Lexer(ec);
+        List<Token> tokens = lexer.tokenize("SELECT TOP 5 id, nombre FROM clientes ORDER BY nombre;");
+        assertFalse(ec.hasErrors());
+
+        Parser parser = new Parser(ec);
+        parser.parse(tokens);
+        assertFalse(ec.hasErrors(), "SELECT TOP deberia ser valido. Errores: " + ec.getErrors());
+    }
+
+    @Test
+    void testParseSelectWithDistinct() {
+        ErrorCollector ec = new ErrorCollector();
+        Lexer lexer = new Lexer(ec);
+        List<Token> tokens = lexer.tokenize("SELECT DISTINCT estado FROM clientes;");
+        assertFalse(ec.hasErrors());
+
+        Parser parser = new Parser(ec);
+        parser.parse(tokens);
+        assertFalse(ec.hasErrors(), "SELECT DISTINCT deberia ser valido. Errores: " + ec.getErrors());
+    }
+
+    @Test
+    void testInvalidWhereWithoutCondition() {
+        ErrorCollector ec = new ErrorCollector();
+        Lexer lexer = new Lexer(ec);
+        List<Token> tokens = lexer.tokenize("SELECT * FROM clientes WHERE;");
+        assertFalse(ec.hasErrors());
+
+        Parser parser = new Parser(ec);
+        parser.parse(tokens);
+        assertTrue(ec.hasErrors(), "WHERE sin condicion deberia ser invalido");
+    }
 }
