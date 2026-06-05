@@ -115,7 +115,18 @@ public class Lexer {
                 continue;
             }
 
-            if (current == ':' || current == '$') {
+            if (current == ':') {
+                // Check for := (assignment) and :: (PostgreSQL cast) before placeholder
+                if (position + 1 < input.length()
+                    && (input.charAt(position + 1) == '=' || input.charAt(position + 1) == ':')) {
+                    readOperator(tokens);
+                    continue;
+                }
+                readPlaceholder(tokens);
+                continue;
+            }
+
+            if (current == '$') {
                 readPlaceholder(tokens);
                 continue;
             }
@@ -395,9 +406,13 @@ public class Lexer {
                 sb.append(input.charAt(position));
                 advance();
             }
-            while (position < input.length() && isDigit(input.charAt(position))) {
-                sb.append(input.charAt(position));
-                advance();
+            if (position < input.length() && isDigit(input.charAt(position))) {
+                while (position < input.length() && isDigit(input.charAt(position))) {
+                    sb.append(input.charAt(position));
+                    advance();
+                }
+            } else {
+                malformed = true;
             }
         }
 
@@ -494,7 +509,8 @@ public class Lexer {
                 (c1 == '<' && c2 == '>') ||
                 (c1 == '!' && c2 == '=') ||
                 (c1 == '|' && c2 == '|') ||
-                (c1 == ':' && c2 == '=')) {
+                (c1 == ':' && c2 == '=') ||
+                (c1 == ':' && c2 == ':')) {
                 sb.append(c2);
                 advance();
             }
@@ -537,7 +553,7 @@ public class Lexer {
                u.equals("DATE") || u.equals("TIME") || u.equals("TIMESTAMP") ||
                u.equals("DATETIME") || u.equals("BIGINT") || u.equals("SMALLINT") ||
                u.equals("TINYINT") || u.equals("BYTEA") || u.equals("SERIAL") ||
-               u.equals("REAL") || u.equals("ENUM") || u.equals("SET") ||
+               u.equals("REAL") || u.equals("ENUM") ||
                u.equals("CHARACTER") || u.equals("VARYING") || u.equals("PRECISION") ||
                u.equals("UNSIGNED") || u.equals("SIGNED") || u.equals("INTERVAL") ||
                u.equals("NCHAR") || u.equals("NVARCHAR") || u.equals("MONEY") ||

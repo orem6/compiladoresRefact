@@ -278,12 +278,18 @@ public class Parser {
     private void parseJoin() {
         String joinType = consume().getLexeme().toUpperCase();
 
-        if (checkKeyword("OUTER")) {
+        if (joinType.equals("JOIN")) {
+            // Bare JOIN (equivalent to INNER JOIN) - already consumed, nothing else needed
+        } else if (checkKeyword("OUTER")) {
             joinType += " " + consume().getLexeme().toUpperCase();
-        }
-
-        if (checkKeyword("JOIN")) {
-            consume();
+            if (checkKeyword("JOIN")) {
+                consume();
+            } else {
+                addError("JOIN esperado despues de " + joinType);
+                return;
+            }
+        } else if (checkKeyword("JOIN")) {
+            consume(); // e.g. "INNER JOIN" - INNER was consumed, now consume JOIN
         } else if (checkKeyword("INNER") || checkKeyword("LEFT") || checkKeyword("RIGHT") ||
                    checkKeyword("FULL") || checkKeyword("CROSS")) {
             joinType += " " + consume().getLexeme().toUpperCase();
@@ -331,46 +337,49 @@ public class Parser {
     }
 
     private void parseJoinCondition() {
-        if (position < tokens.size() &&
-            (checkTokenType(TokenType.IDENTIFICADOR) || checkTokenType(TokenType.PALABRA_RESERVADA))) {
+        parseCondition();
+        while (checkKeyword("AND") || checkKeyword("OR")) {
             consume();
-
-            if (checkTokenType(TokenType.PUNTO)) {
-                consume();
-                if (checkTokenType(TokenType.IDENTIFICADOR) || checkTokenType(TokenType.PALABRA_RESERVADA)) {
-                    consume();
-                }
-            }
-
-            if (checkTokenType(TokenType.OPERADOR_COMPARACION) || checkTokenType(TokenType.OPERADOR)) {
-                consume();
-                parseValue();
-            }
+            parseCondition();
         }
     }
 
     private void parseWhere() {
         consume(); // WHERE
-        int start = position;
-        if (checkTokenType(TokenType.IDENTIFICADOR) || checkTokenType(TokenType.PALABRA_RESERVADA) ||
-            checkTokenType(TokenType.IDENTIFICADOR_DELIMITADO) || checkTokenType(TokenType.NUMERO_ENTERO) ||
-            checkTokenType(TokenType.NUMERO_DECIMAL) || checkTokenType(TokenType.CADENA) ||
-            checkTokenType(TokenType.FUNCION) || checkTokenType(TokenType.PARENTESIS_IZQUIERDO) ||
-            checkKeyword("NOT") || checkKeyword("EXISTS")) {
-            parseCondition();
-        }
-        if (position == start) {
-            addError("Condicion esperada despues de WHERE");
-            return;
-        }
+        parseWhereCondition();
         while (checkKeyword("AND") || checkKeyword("OR")) {
             consume();
-            int connectorPos = position;
-            parseCondition();
-            if (position == connectorPos) {
-                addError("Condicion esperada despues de operador logico");
-                break;
+            parseWhereCondition();
+        }
+    }
+
+    private void parseWhereCondition() {
+        if (checkKeyword("NOT") || checkKeyword("EXISTS")) {
+            consume();
+            if (checkKeyword("EXISTS")) {
+                consume();
             }
+        }
+        if (checkTokenType(TokenType.PARENTESIS_IZQUIERDO)) {
+            consume(); // (
+            parseWhereCondition();
+            while (checkKeyword("AND") || checkKeyword("OR")) {
+                consume();
+                parseWhereCondition();
+            }
+            if (checkTokenType(TokenType.PARENTESIS_DERECHO)) {
+                consume(); // )
+            } else {
+                addError(") esperado para cerrar parentesis en WHERE");
+            }
+            parseCondition();
+        } else if (checkTokenType(TokenType.IDENTIFICADOR) || checkTokenType(TokenType.PALABRA_RESERVADA) ||
+            checkTokenType(TokenType.IDENTIFICADOR_DELIMITADO) || checkTokenType(TokenType.NUMERO_ENTERO) ||
+            checkTokenType(TokenType.NUMERO_DECIMAL) || checkTokenType(TokenType.CADENA) ||
+            checkTokenType(TokenType.FUNCION)) {
+            parseCondition();
+        } else {
+            addError("Condicion esperada despues de WHERE");
         }
     }
 
@@ -1318,7 +1327,15 @@ public class Parser {
                 addError(") sin cerrar en CTE");
             }
 
-            break; // only parse first CTE for basic validation, then expect SELECT
+            // Check for comma to parse additional CTEs
+            if (!checkTokenType(TokenType.COMA)) {
+                break;
+            }
+        }
+
+        if (position >= tokens.size() || checkTokenType(TokenType.EOF)) {
+            addError("SELECT esperado despues de definicion(es) CTE");
+            return new SelectStatement();
         }
 
         if (!checkKeyword("SELECT")) {

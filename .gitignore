@@ -29,6 +29,11 @@ nbdist/
 Thumbs.db
 desktop.ini
 
+# Environment variables
+.env
+.env.local
+.env.*.local
+
 # Temporary files
 *.tmp
 *.temp

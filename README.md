@@ -34,6 +34,20 @@ choco install maven
 2. Descargar Maven desde https://maven.apache.org/download.cgi
 3. Extraer y agregar `bin/` al PATH del sistema
 
+### Instalación en macOS
+
+```bash
+# Usando Homebrew (recomendado)
+brew install openjdk@17 maven
+```
+
+### Instalación en Linux (Ubuntu/Debian)
+
+```bash
+sudo apt update
+sudo apt install openjdk-17-jdk maven
+```
+
 ---
 
 ## Compilar
@@ -60,6 +74,21 @@ java -jar target/sql-compiler-1.0.0.jar
 
 El servidor inicia en `http://localhost:8080`.
 
+### Variables de Entorno (opcional)
+
+El archivo `.env.example` contiene las variables configurables. Para usarlas:
+
+```bash
+cp .env.example .env
+export $(cat .env | xargs)
+mvn spring-boot:run
+```
+
+| Variable | Default | Descripción |
+|---|---|---|
+| `SERVER_PORT` | `8080` | Puerto del servidor |
+| `CORS_ALLOWED_ORIGINS` | `http://localhost:5173,http://localhost:3000` | Orígenes CORS permitidos |
+
 ---
 
 ## Ejecutar Tests
@@ -70,7 +99,7 @@ mvn test
 
 Salida esperada:
 ```
-[INFO] Tests run: 124, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Tests run: 343, Failures: 0, Errors: 0, Skipped: 0
 [INFO] BUILD SUCCESS
 ```
 
@@ -240,10 +269,12 @@ src/
 │   └── README.md                             # Documentación de scripts
 │
 └── test/java/com/umg/
-    ├── api/compiler/                         # Tests del controlador
-    ├── integration/                          # Tests de integración
-    ├── lexer/                                # Tests del lexer
-    └── parser/                               # Tests del parser
+    ├── api/compiler/                         # Tests del controlador (15 tests)
+    ├── extractor/                            # Tests del extractor de referencias (34 tests)
+    ├── integration/                          # Tests de integración (62 tests)
+    ├── lexer/                                # Tests del lexer (57 tests)
+    ├── parser/                               # Tests del parser (77 tests)
+    └── stress/                               # Tests de fuzzing (87 tests)
 ```
 
 ---

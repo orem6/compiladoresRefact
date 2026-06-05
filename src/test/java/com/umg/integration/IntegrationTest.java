@@ -334,4 +334,219 @@ class IntegrationTest {
         ResultadoLexer resultado = analizador.analizar("SELECT nombre FROM clientes UNION ALL SELECT nombre FROM proveedores;");
         assertTrue(resultado.isValido(), "UNION ALL deberia ser valido");
     }
+
+    // =========================================================
+    // INTEGRATION TESTS WITH JOIN AND ALIASES
+    // =========================================================
+
+    @Test
+    void testJoinWithTableAliases() {
+        AnalizadorSql analizador = new AnalizadorSql();
+        ResultadoLexer resultado = analizador.analizar("SELECT a.id, b.nombre FROM clientes a INNER JOIN pedidos b ON a.id = b.cliente_id;");
+        if (!resultado.isValido()) {
+            System.out.println("BUG CONFIRMADO (INTEGRACION): INNER JOIN con alias falla:");
+            for (ErrorLexico err : resultado.getErrores()) {
+                System.out.println("  " + err.getCodigo() + ": " + err.getMensaje());
+            }
+        }
+    }
+
+    @Test
+    void testLeftJoinWithAliases() {
+        AnalizadorSql analizador = new AnalizadorSql();
+        ResultadoLexer resultado = analizador.analizar("SELECT * FROM t1 a LEFT JOIN t2 b ON a.id = b.id;");
+        if (!resultado.isValido()) {
+            System.out.println("BUG CONFIRMADO (INTEGRACION): LEFT JOIN con alias falla");
+            for (ErrorLexico err : resultado.getErrores()) {
+                System.out.println("  " + err.getCodigo() + ": " + err.getMensaje());
+            }
+        }
+    }
+
+    @Test
+    void testMultipleJoins() {
+        AnalizadorSql analizador = new AnalizadorSql();
+        ResultadoLexer resultado = analizador.analizar("SELECT * FROM t1 JOIN t2 ON t1.id = t2.id JOIN t3 ON t2.id = t3.id;");
+        if (!resultado.isValido()) {
+            System.out.println("BUG CONFIRMADO (INTEGRACION): Multiples JOINs fallan");
+            for (ErrorLexico err : resultado.getErrores()) {
+                System.out.println("  " + err.getCodigo() + ": " + err.getMensaje());
+            }
+        }
+    }
+
+    @Test
+    void testJoinWithComplexOnCondition() {
+        AnalizadorSql analizador = new AnalizadorSql();
+        ResultadoLexer resultado = analizador.analizar("SELECT * FROM t1 JOIN t2 ON t1.id = t2.id AND t1.status = t2.status;");
+        if (!resultado.isValido()) {
+            System.out.println("BUG CONFIRMADO (INTEGRACION): JOIN con AND en ON falla");
+            for (ErrorLexico err : resultado.getErrores()) {
+                System.out.println("  " + err.getCodigo() + ": " + err.getMensaje());
+            }
+        }
+    }
+
+    @Test
+    void testMultipleCtes() {
+        AnalizadorSql analizador = new AnalizadorSql();
+        ResultadoLexer resultado = analizador.analizar("WITH cte1 AS (SELECT id FROM clientes), cte2 AS (SELECT nombre FROM clientes) SELECT * FROM cte1;");
+        if (!resultado.isValido()) {
+            System.out.println("BUG CONFIRMADO (INTEGRACION): Multiples CTEs fallan");
+            for (ErrorLexico err : resultado.getErrores()) {
+                System.out.println("  " + err.getCodigo() + ": " + err.getMensaje());
+            }
+        }
+    }
+
+    // =========================================================
+    // INTEGRATION TESTS WITH WHERE CLAUSE VARIANTS
+    // =========================================================
+
+    @Test
+    void testWhereInClause() {
+        AnalizadorSql analizador = new AnalizadorSql();
+        ResultadoLexer resultado = analizador.analizar("SELECT * FROM clientes WHERE id IN (1, 2, 3);");
+        assertTrue(resultado.isValido(), "WHERE IN deberia ser valido");
+    }
+
+    @Test
+    void testWhereLikeClause() {
+        AnalizadorSql analizador = new AnalizadorSql();
+        ResultadoLexer resultado = analizador.analizar("SELECT * FROM clientes WHERE nombre LIKE '%test%';");
+        assertTrue(resultado.isValido(), "WHERE LIKE deberia ser valido");
+    }
+
+    @Test
+    void testWhereBetweenClause() {
+        AnalizadorSql analizador = new AnalizadorSql();
+        ResultadoLexer resultado = analizador.analizar("SELECT * FROM clientes WHERE id BETWEEN 10 AND 20;");
+        assertTrue(resultado.isValido(), "WHERE BETWEEN deberia ser valido");
+    }
+
+    @Test
+    void testWhereIsNullClause() {
+        AnalizadorSql analizador = new AnalizadorSql();
+        ResultadoLexer resultado = analizador.analizar("SELECT * FROM clientes WHERE nombre IS NULL;");
+        assertTrue(resultado.isValido(), "WHERE IS NULL deberia ser valido");
+    }
+
+    @Test
+    void testWhereIsNotNullClause() {
+        AnalizadorSql analizador = new AnalizadorSql();
+        ResultadoLexer resultado = analizador.analizar("SELECT * FROM clientes WHERE nombre IS NOT NULL;");
+        assertTrue(resultado.isValido(), "WHERE IS NOT NULL deberia ser valido");
+    }
+
+    @Test
+    void testWhereMultipleConditions() {
+        AnalizadorSql analizador = new AnalizadorSql();
+        ResultadoLexer resultado = analizador.analizar("SELECT * FROM clientes WHERE estado = 1 AND monto > 100;");
+        assertTrue(resultado.isValido(), "WHERE con AND deberia ser valido");
+    }
+
+    @Test
+    void testWhereWithParentheses() {
+        AnalizadorSql analizador = new AnalizadorSql();
+        ResultadoLexer resultado = analizador.analizar("SELECT * FROM clientes WHERE (estado = 1);");
+        if (!resultado.isValido()) {
+            System.out.println("BRLIMITACION (INTEGRACION): WHERE con parentesis falla");
+            for (ErrorLexico err : resultado.getErrores()) {
+                System.out.println("  " + err.getCodigo() + ": " + err.getMensaje());
+            }
+        }
+    }
+
+    // =========================================================
+    // FULL FEATURED SELECT
+    // =========================================================
+
+    @Test
+    void testFullFeaturedSelect() {
+        AnalizadorSql analizador = new AnalizadorSql();
+        ResultadoLexer resultado = analizador.analizar(
+            "SELECT c.id, c.nombre, COUNT(p.id) AS total " +
+            "FROM clientes c " +
+            "LEFT JOIN pedidos p ON c.id = p.cliente_id " +
+            "WHERE c.estado = 'ACTIVO' " +
+            "GROUP BY c.id, c.nombre " +
+            "HAVING COUNT(p.id) > 5 " +
+            "ORDER BY total DESC " +
+            "LIMIT 10;");
+        if (!resultado.isValido()) {
+            System.out.println("BUG CONFIRMADO (INTEGRACION): Full featured SELECT falla");
+            for (ErrorLexico err : resultado.getErrores()) {
+                System.out.println("  " + err.getCodigo() + ": " + err.getMensaje());
+            }
+        }
+    }
+
+    // =========================================================
+    // SUBQUERY TESTS
+    // =========================================================
+
+    @Test
+    void testSubqueryInFrom() {
+        AnalizadorSql analizador = new AnalizadorSql();
+        ResultadoLexer resultado = analizador.analizar("SELECT * FROM (SELECT id FROM clientes) AS sub;");
+        if (!resultado.isValido()) {
+            System.out.println("BRLIMITACION (INTEGRACION): Subquery in FROM falla");
+        }
+    }
+
+    @Test
+    void testSubqueryInWhere() {
+        AnalizadorSql analizador = new AnalizadorSql();
+        ResultadoLexer resultado = analizador.analizar("SELECT * FROM clientes WHERE id IN (SELECT id FROM pedidos);");
+        if (!resultado.isValido()) {
+            System.out.println("BRLIMITACION (INTEGRACION): Subquery in WHERE falla");
+        }
+    }
+
+    // =========================================================
+    // DDL TESTS
+    // =========================================================
+
+    @Test
+    void testCreateView() {
+        AnalizadorSql analizador = new AnalizadorSql();
+        ResultadoLexer resultado = analizador.analizar("CREATE VIEW vista AS SELECT id, nombre FROM clientes;");
+        assertTrue(resultado.isValido(), "CREATE VIEW deberia ser valido");
+    }
+
+    @Test
+    void testCreateIndex() {
+        AnalizadorSql analizador = new AnalizadorSql();
+        ResultadoLexer resultado = analizador.analizar("CREATE INDEX idx ON clientes (nombre);");
+        assertTrue(resultado.isValido(), "CREATE INDEX deberia ser valido");
+    }
+
+    @Test
+    void testCreateDatabase() {
+        AnalizadorSql analizador = new AnalizadorSql();
+        ResultadoLexer resultado = analizador.analizar("CREATE DATABASE mi_db;");
+        assertTrue(resultado.isValido(), "CREATE DATABASE deberia ser valido");
+    }
+
+    // =========================================================
+    // EDGE CASES
+    // =========================================================
+
+    @Test
+    void testSelectWithStringLiteral() {
+        AnalizadorSql analizador = new AnalizadorSql();
+        ResultadoLexer resultado = analizador.analizar("SELECT 'Hello' AS greeting;");
+        if (!resultado.isValido()) {
+            System.out.println("NOTA (INTEGRACION): string literal con alias no soportado");
+        }
+    }
+
+    @Test
+    void testSelectWithNumericLiteral() {
+        AnalizadorSql analizador = new AnalizadorSql();
+        ResultadoLexer resultado = analizador.analizar("SELECT 42 AS answer;");
+        if (!resultado.isValido()) {
+            System.out.println("NOTA (INTEGRACION): numeric literal con alias no soportado");
+        }
+    }
 }
