@@ -198,6 +198,10 @@ public class SqlReferenceExtractor {
             Token t = tokens.get(i);
             if (t.getLexeme().equals("*")) { i++; continue; }
             if (t.getType() == TokenType.COMA || t.getType() == TokenType.PUNTO) { i++; continue; }
+            if (t.getLexeme().equalsIgnoreCase("AS")) {
+                i += 2;
+                continue;
+            }
             if (t.getType() == TokenType.FUNCION) {
                 i++;
                 if (i < tokens.size() && tokens.get(i).getType() == TokenType.PARENTESIS_IZQUIERDO) {
@@ -207,20 +211,37 @@ public class SqlReferenceExtractor {
                         if (tokens.get(i).getType() == TokenType.PARENTESIS_IZQUIERDO) parenDepth++;
                         else if (tokens.get(i).getType() == TokenType.PARENTESIS_DERECHO) parenDepth--;
                         if (parenDepth > 0) {
-                            String colRaw = tokens.get(i).getLexeme();
-                            if (!colRaw.equals(",") && !colRaw.equals("*")) {
-                                refs.addColumna(new ReferenciaColumna(
-                                    normalizer.normalizar(colRaw, dialecto), null,
-                                    tokens.get(i).getLinea(), tokens.get(i).getColumna()));
+                            if (i + 1 < tokens.size() && tokens.get(i + 1).getType() == TokenType.PUNTO) {
+                                String calificador = normalizer.normalizar(tokens.get(i).getLexeme(), dialecto);
+                                i += 2;
+                                if (i < tokens.size() && esIdentificador(tokens.get(i)) && parenDepth > 0) {
+                                    refs.addColumna(new ReferenciaColumna(
+                                        normalizer.normalizar(tokens.get(i).getLexeme(), dialecto),
+                                        calificador, tokens.get(i).getLinea(), tokens.get(i).getColumna()));
+                                }
+                            } else {
+                                String colRaw = tokens.get(i).getLexeme();
+                                if (!colRaw.equals(",") && !colRaw.equals("*") && esIdentificador(tokens.get(i))) {
+                                    refs.addColumna(new ReferenciaColumna(
+                                        normalizer.normalizar(colRaw, dialecto), null,
+                                        tokens.get(i).getLinea(), tokens.get(i).getColumna()));
+                                }
                             }
                         }
                         i++;
                     }
                 }
+                if (i < fromIdx && tokens.get(i).getLexeme().equalsIgnoreCase("AS")) {
+                    i += 2;
+                }
                 continue;
             }
             if (esIdentificador(t)) {
                 String raw = t.getLexeme();
+                if (raw.equalsIgnoreCase("AS")) {
+                    i += 2;
+                    continue;
+                }
                 String nombre = normalizer.normalizar(raw, dialecto);
                 int linea = t.getLinea();
                 int col = t.getColumna();
